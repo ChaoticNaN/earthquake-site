@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>全球地震显示系统 - 地图标注</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, 'Segoe UI', '微软雅黑', sans-serif;
+            background: #0a0a2a;
+            overflow-x: hidden;
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a3e 0%, #0a0a2a 100%);
+            color: white;
+            border-bottom: 1px solid #333;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: #aaa;
+            font-size: 14px;
+        }
+        .maps-container {
+            display: flex;
+            height: 500px;
+            border-bottom: 2px solid #333;
+        }
+        .globe-box, .mercator-box {
+            flex: 1;
+            position: relative;
+            background: #000011;
+        }
+        .mercator-box {
+            background: #eaf7ff;
+        }
+        .map-label {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .mercator-box .map-label {
+            background: rgba(0,0,0,0.5);
+        }
+        .data-section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 18px 30px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+            min-width: 140px;
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        .stat-label {
+            color: #ccc;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        .quake-list {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+        }
+        .quake-header {
+            display: grid;
+            grid-template-columns: 100px 1fr 180px 100px;
+            background: #1a1a3e;
+            color: white;
+            padding: 14px 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+        }
+        .quake-item {
+            display: grid;
+            grid-template-columns: 100px 1fr 180px 100px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #222;
+            transition: background 0.2s;
+            color: #ddd;
+        }
+        .quake-item:hover {
+            background: rgba(255,255,255,0.08);
+        }
+        .magnitude { font-weight: bold; }
+        .m-strong { color: #ff4444; }
+        .m-mid { color: #ff8844; }
+        .m-light { color: #44ff44; }
+        .place { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .time { font-size: 13px; color: #999; }
+        .tsunami {
+            font-size: 12px;
+            padding: 2px 10px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        .tsunami-yes { background: #ff5722; color: white; }
+        .tsunami-no { background: #444; color: #aaa; }
+        .loading, .error { text-align: center; padding: 40px; color: #aaa; }
+        
+        @media (max-width: 900px) {
+            .maps-container { flex-direction: column; height: auto; }
+            .globe-box, .mercator-box { min-height: 400px; }
+            .quake-header, .quake-item { grid-template-columns: 70px 1fr 130px 70px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌍 全球地震显示系统</h1>
+        <div class="subtitle">数据来源：USGS | 红点大小表示震级强弱</div>
+    </div>
+
+    <div class="maps-container">
+        <div class="globe-box" id="globeContainer">
+            <div class="map-label">🌐 3D 球形地球 (红点大小=震级)</div>
+        </div>
+        <div class="mercator-box" id="mercatorContainer">
+            <div class="map-label">🗺️ 墨卡托投影世界地图 (红点大小=震级)</div>
+        </div>
+    </div>
+
+    <div class="data-section">
+        <div class="stats" id="stats">
+            <div class="stat-card"><div class="stat-number" id="totalCount">-</div><div class="stat-label">📊 地震总数</div></div>
+            <div class="stat-card"><div class="stat-number" id="avgMagnitude">-</div><div class="stat-label">📈 平均震级</div></div>
+            <div class="stat-card"><div class="stat-number" id="maxMagnitude">-</div><div class="stat-label">⚠️ 最大震级</div></div>
+        </div>
+        <div class="quake-list">
+            <div class="quake-header"><span>震级</span><span>地点</span><span>时间</span><span>海啸</span></div>
+            <div id="quakeList" class="loading">加载地震数据中...</div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        
+        // 存储地震数据用于标注
+        let currentEarthquakes = [];
+        
+        const container = document.getElementById('globeContainer');
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000011);
+        const camera = new THREE.PerspectiveCamera(45, width/height, 0.1, 1000);
+        camera.position.set(0, 0, 3.2);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(width, height);
+        container.appendChild(renderer.domElement);
+        
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 1.0;
+        controls.enableZoom = true;
+        controls.enablePan = false;
+        
+        // 星空
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 1500;
+        const starPositions = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount; i++) {
+            starPositions[i*3] = (Math.random() - 0.5) * 2000;
+            starPositions[i*3+1] = (Math.random() - 0.5) * 2000;
+            starPositions[i*3+2] = (Math.random() - 0.5) * 300 - 150;
+        }
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({ color: 0xffffff, size: 0.4 }));
+        scene.add(stars);
+        
+        const textureLoader = new THREE.TextureLoader();
+        const earthMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
+        const earthSpecularMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_specular_2048.jpg');
+        const earthNormalMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_normal_2048.jpg');
+        const cloudMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_clouds_1024.png');
+        
+        const earthMat = new THREE.MeshPhongMaterial({ map: earthMap, specularMap: earthSpecularMap, specular: new THREE.Color('grey'), shininess: 5, normalMap: earthNormalMap });
+        const earth = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 128), earthMat);
+        scene.add(earth);
+        
+        const cloudMat = new THREE.MeshPhongMaterial({ map: cloudMap, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending });
+        const clouds = new THREE.Mesh(new THREE.SphereGeometry(1.008, 128, 128), cloudMat);
+        scene.add(clouds);
+        
+        // 光源
+        const ambient = new THREE.AmbientLight(0x333333);
+        scene.add(ambient);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(5, 3, 5);
+        scene.add(dirLight);
+        const fillLight = new THREE.PointLight(0x4488ff, 0.3);
+        fillLight.position.set(-2, 1, 3);
+        scene.add(fillLight);
+        
+        // 存储地震标记点组
+        let quakeMarkers = null;
+        
+        // 根据震级获取点的大小 (震级越大，红点越大)
+       function getMarkerSize(mag) {
+    // 震级5.5→0.020，9.0→0.080，区分度更明显
+    // 使用指数增长，让高震级红点显著更大
+    const base = 0.015;
+    const scale = Math.pow(2, (mag - 5.5) / 2);  // 每增加2级，大小翻倍
+    return Math.min(base * scale, 0.12);  // 限制最大不超过0.12
+}
+        
+        // 经纬度转三维坐标 (半径稍大于地球，使标记浮在表面)
+        function latLonToVector3(lat, lon, radius = 1.001) {
+            const phi = (90 - lat) * Math.PI / 180;
+            const theta = -lon * Math.PI / 180;
+            const x = radius * Math.sin(phi) * Math.cos(theta);
+            const y = radius * Math.cos(phi);
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+            return new THREE.Vector3(x, y, z);
+        }
+        
+        // 更新3D地球上的地震标注（无光晕，贴在地球表面）
+        function updateGlobeMarkers(earthquakes) {
+            if (quakeMarkers) {
+                scene.remove(quakeMarkers);
+                if (quakeMarkers.geometry) quakeMarkers.geometry.dispose();
+                if (quakeMarkers.material) quakeMarkers.material.dispose();
+            }
+            
+            if (!earthquakes || earthquakes.length === 0) return;
+            
+            // 过滤有效经纬度的地震
+            const validQuakes = earthquakes.filter(q => {
+                const coords = q.geometry.coordinates;
+                return coords && !isNaN(coords[0]) && !isNaN(coords[1]);
+            });
+            
+            if (validQuakes.length === 0) return;
+            
+            // 创建每个地震的独立小球体
+            const group = new THREE.Group();
+            
+            validQuakes.forEach(quake => {
+                const coords = quake.geometry.coordinates;
+                const lon = coords[0];   // 经度
+                const lat = coords[1];   // 纬度
+                const mag = quake.properties.mag;
+                const size = getMarkerSize(mag);
+                
+                // 直接贴在地球表面
+                const position = latLonToVector3(lat, lon, 1.001);
+                
+                // 红点材质
+                const material = new THREE.MeshStandardMaterial({
+                    color: 0xff3333,
+                    emissive: 0x220000,
+                    emissiveIntensity: 0.15,
+                    roughness: 0.4,
+                    metalness: 0.05
+                });
+                
+                const sphere = new THREE.Mesh(new THREE.SphereGeometry(size, 16, 16), material);
+                sphere.position.copy(position);
+                group.add(sphere);
+            });
+            
+            quakeMarkers = group;
+            scene.add(quakeMarkers);
+        }
+        
+        // 暴露给全局，供地震数据更新时调用
+        window.updateGlobeMarkers = updateGlobeMarkers;
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            clouds.rotation.y += 0.0006;
+            stars.rotation.y += 0.0002;
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+        
+        window.addEventListener('resize', () => {
+            const newW = container.clientWidth, newH = container.clientHeight;
+            camera.aspect = newW / newH;
+            camera.updateProjectionMatrix();
+            renderer.setSize(newW, newH);
+        });
+    </script>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson@3.0.2/dist/topojson.min.js"></script>
+    <script>
+        // 墨卡托地图相关变量
+        let mercatorSvg = null;
+        let currentProjection = null;
+        let worldDataCache = null;
+        
+        (function() {
+            const container = document.getElementById('mercatorContainer');
+            let width = container.clientWidth, height = container.clientHeight;
+            mercatorSvg = d3.select("#mercatorContainer").append("svg").attr("width", width).attr("height", height).style("background", "#d9e9ff");
+            
+            function drawBaseMap() {
+                width = container.clientWidth; height = container.clientHeight;
+                mercatorSvg.attr("width", width).attr("height", height);
+                currentProjection = d3.geoMercator().scale((width / 2 / Math.PI) * 0.85).translate([width/2, height/2]);
+                const path = d3.geoPath().projection(currentProjection);
+                
+                fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json')
+                    .then(res => res.json())
+                    .then(world => {
+                        worldDataCache = world;
+                        const countries = topojson.feature(world, world.objects.countries);
+                        // 清除之前的所有元素
+                        mercatorSvg.selectAll(".country").remove();
+                        mercatorSvg.selectAll(".country-border").remove();
+                        mercatorSvg.selectAll(".graticule").remove();
+                        mercatorSvg.selectAll(".equator").remove();
+                        
+                        mercatorSvg.selectAll(".country").data(countries.features).enter().append("path")
+                            .attr("class", "country")
+                            .attr("d", path).attr("fill", "#b8d4e3").attr("stroke", "#6a8e9b").attr("stroke-width", 0.5);
+                        
+                        const graticule = d3.geoGraticule().step([15,15]);
+                        mercatorSvg.append("path").attr("class", "graticule").datum(graticule).attr("d", path).attr("fill", "none").attr("stroke", "#aaccdd").attr("stroke-width", 0.5).attr("stroke-dasharray", "3 3");
+                        const equator = { type: "LineString", coordinates: [[-180,0],[180,0]] };
+                        mercatorSvg.append("path").attr("class", "equator").datum(equator).attr("d", path).attr("fill", "none").attr("stroke", "#e34d4d").attr("stroke-width", 1.2);
+                        
+                        // 如果有地震数据缓存，重新绘制地震标记
+                        if (window.currentEarthquakeData && window.currentEarthquakeData.length > 0) {
+                            updateMercatorMarkers(window.currentEarthquakeData);
+                        }
+                    }).catch(() => {
+                        mercatorSvg.append("text").attr("x", width/2).attr("y", height/2).attr("text-anchor", "middle").text("地图加载失败，请检查网络").attr("fill", "#555");
+                    });
+            }
+            
+            drawBaseMap();
+            window.addEventListener('resize', () => drawBaseMap());
+        })();
+        
+        // 更新墨卡托地图上的地震标记（无光晕）
+        function updateMercatorMarkers(earthquakes) {
+            if (!mercatorSvg || !currentProjection) return;
+            
+            // 移除旧的地震标记
+            mercatorSvg.selectAll(".quake-marker").remove();
+            
+            if (!earthquakes || earthquakes.length === 0) return;
+            
+            // 获取当前投影函数
+            const projection = currentProjection;
+            const width = parseFloat(mercatorSvg.attr("width"));
+            const height = parseFloat(mercatorSvg.attr("height"));
+            
+            // 筛选有效经纬度且在可见范围内的地震
+            earthquakes.forEach(quake => {
+                const coords = quake.geometry.coordinates;
+                const lon = coords[0];
+                const lat = coords[1];
+                const mag = quake.properties.mag;
+                
+                // 转换到屏幕坐标
+                const screenCoords = projection([lon, lat]);
+                if (!screenCoords) return;
+                
+                const x = screenCoords[0];
+                const y = screenCoords[1];
+                
+                // 检查是否在SVG范围内
+                if (x < -50 || x > width + 50 || y < -50 || y > height + 50) return;
+                
+                // 红点大小：震级越大，红点越大
+                // 震级5.5→6px，9.0→32px，区分度明显
+const radius = 4 * Math.pow(1.6, mag - 5.5);
+// 限制最大不超过35px
+const finalRadius = Math.min(radius, 35);
+                
+                // 创建红点组
+                const group = mercatorSvg.append("g").attr("class", "quake-marker");
+                
+                // 主红点（无光晕）
+                group.append("circle")
+                    .attr("cx", x)
+                    .attr("cy", y)
+                    .attr("r", radius)
+                    .attr("fill", "#ff3333")
+                    .attr("stroke", "#ffffff")
+                    .attr("stroke-width", 0.8)
+                    .attr("opacity", 0.85);
+                
+                // 添加震级标签（震级较大时显示）
+                if (mag >= 6) {
+                    group.append("text")
+                        .attr("x", x + radius + 3)
+                        .attr("y", y - 3)
+                        .attr("fill", "#ff8888")
+                        .attr("font-size", "9px")
+                        .attr("font-weight", "bold")
+                        .attr("stroke", "#fff")
+                        .attr("stroke-width", 0.3)
+                        .text(mag.toFixed(1));
+                }
+                
+                // 添加悬浮提示
+                group.append("title")
+                    .text(`${quake.properties.place}\n震级: M${mag.toFixed(1)}\n时间: ${new Date(quake.properties.time).toLocaleString()}`);
+            });
+        }
+        
+        window.updateMercatorMarkers = updateMercatorMarkers;
+    </script>
+
+    <script>
+        // 计算过去3年的日期范围
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setFullYear(endDate.getFullYear() - 3);
+        
+        // 格式化为 YYYY-MM-DD
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        const starttime = formatDate(startDate);
+        const endtime = formatDate(endDate);
+        
+        // 使用 FDSN 查询接口：过去3年，5.5级以上地震
+        const apiUrl = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${starttime}&endtime=${endtime}&minmagnitude=5.5`;
+        
+        console.log('查询API:', apiUrl);
+        
+        // 存储当前地震数据
+        window.currentEarthquakeData = [];
+        
+        async function fetchEarthquakes() {
+            const quakeListDiv = document.getElementById('quakeList');
+            try {
+                quakeListDiv.innerHTML = '<div class="loading">⏳ 正在加载地震数据...</div>';
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('网络请求失败');
+                const data = await response.json();
+                window.currentEarthquakeData = data.features || [];
+                
+                // 按震级排序（从大到小）
+                window.currentEarthquakeData.sort((a, b) => b.properties.mag - a.properties.mag);
+                
+                displayEarthquakes({ features: window.currentEarthquakeData });
+                updateStats(window.currentEarthquakeData);
+                
+                // 更新两个地图上的地震标记
+                if (window.updateGlobeMarkers) {
+                    window.updateGlobeMarkers(window.currentEarthquakeData);
+                }
+                if (window.updateMercatorMarkers) {
+                    window.updateMercatorMarkers(window.currentEarthquakeData);
+                }
+            } catch (error) {
+                quakeListDiv.innerHTML = `<div class="error">❌ 加载失败：${error.message}<br>请检查网络连接</div>`;
+                console.error('获取地震数据失败:', error);
+            }
+        }
+        
+        function getMagnitudeClass(mag) {
+            if (mag >= 7) return 'm-strong';
+            if (mag >= 6) return 'm-mid';
+            return 'm-light';
+        }
+        
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+        }
+        
+        function updateStats(quakes) {
+            if (!quakes || quakes.length === 0) {
+                document.getElementById('totalCount').textContent = '0';
+                document.getElementById('avgMagnitude').textContent = '-';
+                document.getElementById('maxMagnitude').textContent = '-';
+                return;
+            }
+            const total = quakes.length;
+            let sumMag = 0, maxMag = 0;
+            for (const q of quakes) {
+                const mag = q.properties.mag;
+                sumMag += mag;
+                if (mag > maxMag) maxMag = mag;
+            }
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('avgMagnitude').textContent = (sumMag / total).toFixed(1);
+            document.getElementById('maxMagnitude').textContent = maxMag.toFixed(1);
+        }
+        
+        function displayEarthquakes(data) {
+            const quakes = data.features;
+            const quakeListDiv = document.getElementById('quakeList');
+            if (!quakes || quakes.length === 0) {
+                quakeListDiv.innerHTML = '<div class="loading">📭 暂无地震数据</div>';
+                return;
+            }
+            let html = '';
+            for (const quake of quakes) {
+                const props = quake.properties;
+                const mag = props.mag;
+                html += `
+                    <div class="quake-item">
+                        <div><span class="magnitude ${getMagnitudeClass(mag)}">M${mag.toFixed(1)}</span></div>
+                        <div class="place">📍 ${props.place || '未知地点'}</div>
+                        <div class="time">🕐 ${formatTime(props.time)}</div>
+                        <div><span class="tsunami ${props.tsunami === 1 ? 'tsunami-yes' : 'tsunami-no'}">${props.tsunami === 1 ? '⚠️ 有' : '无'}</span></div>
+                    </div>
+                `;
+            }
+            quakeListDiv.innerHTML = html;
+        }
+        
+        // 页面加载时获取数据
+        fetchEarthquakes();
+        // 每天刷新一次
+        setInterval(fetchEarthquakes, 24 * 60 * 60 * 1000);
+    </script>
+</body>
+</html>

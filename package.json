@@ -1,0 +1,23 @@
+{
+  "name": "earthquake-site",
+  "version": "1.0.0",
+  "description": "全球地震监测系统",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build"
+  },
+  "keywords": [
+    "earthquake",
+    "map",
+    "visualization"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^5.4.21"
+  },
+  "dependencies": {
+    "three": "^0.183.2"
+  }
+}
