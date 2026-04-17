@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>全球地震显示系统 - 真实昼夜模拟 | 动态光照</title>
+    <!-- 百度翻译 MD5 签名库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- 高德地图 API -->
+    <script src="https://webapi.amap.com/maps?v=2.0&key=f1f6aa55ebd83d9d79f187965c06c5a6"></script>
+    <script src="https://webapi.amap.com/loca?v=2.0&key=f1f6aa55ebd83d9d79f187965c06c5a6"></script>
     <style>
         * {
             margin: 0;
@@ -284,6 +289,130 @@
             color: #87CEEB;
             border: 1px solid rgba(100,150,255,0.3);
         }
+
+        /* 地震详情弹窗样式 */
+        .quake-detail-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+
+        .quake-detail-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: white;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        .quake-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 15px;
+        }
+
+        .quake-detail-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+
+        .quake-detail-close {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quake-detail-close:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .quake-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .quake-detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .quake-detail-label {
+            color: #aaa;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .quake-detail-value {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .quake-detail-description {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .quake-detail-description h4 {
+            color: #ff6b6b;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .quake-detail-description p {
+            color: #ddd;
+            line-height: 1.6;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .quake-item-major {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quake-item-major:hover {
+            background: rgba(255,107,107,0.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(255,107,107,0.2);
+        }
     </style>
 </head>
 <body>
@@ -324,11 +453,18 @@
                     <input type="number" id="filterMaxMag" class="filter-input" min="0" step="0.1" placeholder="如：9.0" />
                 </div>
             </div>
-            <div class="filter-buttons">
-                <button class="filter-btn filter-btn-apply" id="filterApplyBtn">🔎 应用筛选</button>
-                <button class="filter-btn filter-btn-reset" id="filterResetBtn">↻ 重置条件</button>
-            </div>
-            <div id="filterMessage"></div>
+                        <div class="filter-buttons">
+                                <label style="display:flex;align-items:center;gap:8px;">
+                                    <input type="checkbox" id="domesticOnlyToggle" />
+                                    <span style="color:#ccc;font-size:13px;">显示国内地震</span>
+                                </label>
+                                <div style="flex:1"></div>
+                                <div style="display:flex;gap:10px;">
+                                    <button class="filter-btn filter-btn-apply" id="filterApplyBtn">🔎 应用筛选</button>
+                                    <button class="filter-btn filter-btn-reset" id="filterResetBtn">↻ 重置条件</button>
+                                </div>
+                        </div>
+                        <div id="filterMessage"></div>
         </div>
         <div class="stats" id="stats">
             <div class="stat-card"><div class="stat-number" id="totalCount">-</div><div class="stat-label">📊 地震总数</div></div>
@@ -594,7 +730,6 @@
                 tipDiv.innerHTML = `☀️ 实时日照 | 直射点: ${formatLatLon(subPoint.lat, subPoint.lon)}<br>🕒 基于UTC时间`;
             }
         }
-        
         // 更新时间显示 (也使用南北纬/东西经)
         function updateUITime() {
             const now = new Date();
@@ -791,28 +926,495 @@
             document.getElementById('maxMagnitude').textContent = maxMag.toFixed(1);
         }
         
-        function displayEarthquakes(data) {
-            const quakes = data.features;
+        async function displayEarthquakes(data) {
+            let quakes = data.features;
             const quakeListDiv = document.getElementById('quakeList');
             if (!quakes || quakes.length === 0) {
                 quakeListDiv.innerHTML = '<div class="loading">📭 暂无地震数据</div>';
                 return;
             }
+            
+            // 检查是否仅显示国内地震
+            const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
+            if (domesticOnlyEnabled) {
+                console.log(`[displayEarthquakes] filtering to domestic earthquakes only, total: ${quakes.length}`);
+                quakes = await filterDomesticEarthquakes(quakes);
+                console.log(`[displayEarthquakes] after filtering: ${quakes.length}`);
+                
+                if (quakes.length === 0) {
+                    quakeListDiv.innerHTML = '<div class="loading">📭 筛选后暂无国内地震数据</div>';
+                    updateStats([]);
+                    return;
+                }
+            }
+            
+            // 更新全局数据，确保点击时索引匹配
+            window.currentEarthquakeData = quakes;
+            
+            // 先显示原始英文地名
             let html = '';
-            for (const quake of quakes) {
+            for (let i = 0; i < quakes.length; i++) {
+                const quake = quakes[i];
                 const props = quake.properties;
                 const mag = props.mag;
+                const isMajor = mag >= 7;
+                const clickAttr = isMajor ? ` onclick="showQuakeDetail(${i})"` : '';
+                const classAttr = isMajor ? ' class="quake-item quake-item-major"' : ' class="quake-item"';
+                const placeText = props.place || '未知地点';
+                const placeEsc = placeText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                 html += `
-                    <div class="quake-item">
-                        <div><span class="magnitude ${getMagnitudeClass(mag)}">M${mag.toFixed(1)}</span></div>
-                        <div class="place">📍 ${props.place || '未知地点'}</div>
+                    <div${classAttr}${clickAttr} data-quake-index="${i}">
+                        <div><span class="magnitude ${getMagnitudeClass(mag)}">M${mag.toFixed(1)}${isMajor ? ' ⭐' : ''}</span></div>
+                        <div class="place" data-orig-place="${placeEsc}" data-lat="${quake.geometry.coordinates[1]}" data-lng="${quake.geometry.coordinates[0]}">📍 ${placeEsc}</div>
                         <div class="time">🕐 ${formatTime(props.time)}</div>
                         <div><span class="tsunami ${props.tsunami === 1 ? 'tsunami-yes' : 'tsunami-no'}">${props.tsunami === 1 ? '⚠️ 有' : '无'}</span></div>
                     </div>
                 `;
             }
             quakeListDiv.innerHTML = html;
+            
+            // 翻译国内地震地点名（非阻塞）
+            try {
+                if (domesticOnlyEnabled) translateVisiblePlacesWithAmap();
+            } catch (e) { console.warn('translateVisiblePlacesWithAmap error', e); }
         }
+
+        // 翻译相关工具与缓存
+        const PLACE_TRANSLATION_CACHE_KEY = 'placeTranslations_v1';
+        
+        // 百度翻译 API 配置
+        const BAIDU_TRANSLATE_CONFIG = {
+            appId: '20260417002596654',
+            secret: 'zAjlCqWP3MbVuiXzwMyX',
+            url: 'https://api.fanyi.baidu.com/api/trans/vip/translate'
+        };
+
+        // 高德地图配置
+        const AMAP_CONFIG = {
+            key: 'f1f6aa55ebd83d9d79f187965c06c5a6',
+            url: 'https://restapi.amap.com/v3/geocode/regeo'
+        };
+
+        function loadTranslationCache() {
+            try {
+                const raw = localStorage.getItem(PLACE_TRANSLATION_CACHE_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) { return {}; }
+        }
+
+        function saveTranslationCache(cache) {
+            try { localStorage.setItem(PLACE_TRANSLATION_CACHE_KEY, JSON.stringify(cache)); } catch (e) { }
+        }
+
+        function containsChinese(text) {
+            return /[\u4e00-\u9fff]/.test(text);
+        }
+
+        // 检查地震是否在中国境内
+        async function isChinaDomesticEarthquake(lat, lng) {
+            try {
+                const amapResult = await getAddressFromCoords(lat, lng);
+                if (!amapResult) return false;
+                
+                const province = amapResult.province || '';
+                const city = amapResult.city || '';
+                
+                const isDomestic = province && province.trim() !== '' && province !== '国外' && province !== '未知'
+                                && city && city.trim() !== '' && city !== '国外' && city !== '未知';
+                
+                console.log(`[isChinaDomesticEarthquake] lat=${lat}, lng=${lng}, province="${province}", city="${city}", isDomestic=${isDomestic}`);
+                return isDomestic;
+            } catch (e) {
+                console.warn(`[isChinaDomesticEarthquake] error:`, e.message);
+                return false;
+            }
+        }
+
+        // 批量过滤国内地震
+        async function filterDomesticEarthquakes(quakes) {
+            const domestic = [];
+            const batchSize = 10;
+            
+            for (let i = 0; i < quakes.length; i += batchSize) {
+                const batch = quakes.slice(i, i + batchSize);
+                const results = await Promise.all(
+                    batch.map(async quake => {
+                        const lat = quake.geometry.coordinates[1];
+                        const lng = quake.geometry.coordinates[0];
+                        const isDomestic = await isChinaDomesticEarthquake(lat, lng);
+                        return isDomestic ? quake : null;
+                    })
+                );
+                domestic.push(...results.filter(q => q !== null));
+            }
+            
+            return domestic;
+        }
+
+        // 生成百度翻译所需的 MD5 签名
+        function generateBaiduSign(query, salt) {
+            const str = BAIDU_TRANSLATE_CONFIG.appId + query + salt + BAIDU_TRANSLATE_CONFIG.secret;
+            return CryptoJS.MD5(str).toString();
+        }
+
+        // 调用高德逆地理编码 API（获取坐标的中文地址信息）
+        async function getAddressFromCoords(lat, lng) {
+            try {
+                console.log(`[amap] requesting reverse geocode for (${lng}, ${lat})`);
+                const response = await fetch(
+                    `${AMAP_CONFIG.url}?location=${lng},${lat}&key=${AMAP_CONFIG.key}&extensions=all`,
+                    { timeout: 5000 }
+                );
+                if (!response.ok) {
+                    console.warn(`[amap] HTTP ${response.status}`);
+                    return null;
+                }
+                const data = await response.json();
+                if (data.status === '1' && data.regeocode) {
+                    const addr = data.regeocode.formatted_address || '';
+                    const province = data.regeocode.addressComponent?.province || '';
+                    const city = data.regeocode.addressComponent?.city || '';
+                    const district = data.regeocode.addressComponent?.district || '';
+                    console.log(`[amap] success: ${addr}`);
+                    return { full: addr, province, city, district };
+                } else {
+                    console.warn(`[amap] no result, status=${data.status}`);
+                    return null;
+                }
+            } catch (e) {
+                console.warn(`[amap] error:`, e.message);
+                return null;
+            }
+        }
+
+        // 调用百度翻译 API
+        async function translatePlace(text) {
+            if (!text) return text;
+            if (containsChinese(text)) return text;
+
+            const cache = loadTranslationCache();
+            if (cache[text]) {
+                console.log(`[translate] cache hit: "${text}" => "${cache[text]}"`);
+                return cache[text];
+            }
+
+            try {
+                const salt = Date.now();
+                const sign = generateBaiduSign(text, salt);
+                
+                console.log(`[translate] calling Baidu API for "${text}"`);
+                const response = await fetch(BAIDU_TRANSLATE_CONFIG.url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        q: text,
+                        from: 'auto',
+                        to: 'zh',
+                        appid: BAIDU_TRANSLATE_CONFIG.appId,
+                        salt: salt,
+                        sign: sign
+                    })
+                });
+
+                if (!response.ok) {
+                    console.warn(`[translate] Baidu API returned HTTP ${response.status}`);
+                    return text;
+                }
+
+                const result = await response.json();
+                console.log(`[translate] Baidu response:`, result);
+                if (result.trans_result && result.trans_result[0]) {
+                    const translated = result.trans_result[0].dst;
+                    if (!translated || translated.trim() === '') {
+                        console.warn(`[translate] Baidu returned empty string for "${text}", using original`);
+                        return text;
+                    }
+                    console.log(`[translate] success: "${text}" => "${translated}"`);
+                    cache[text] = translated;
+                    saveTranslationCache(cache);
+                    return translated;
+                } else {
+                    console.warn(`[translate] Baidu response has no trans_result for "${text}":`, result);
+                    return text;
+                }
+            } catch (e) {
+                console.warn(`[translate] error for "${text}":`, e.message);
+                return text;
+            }
+        }
+
+        // 优化的地点翻译：仅国内地震翻译为中文，国外一律显示英文
+        async function translateLocationWithAmap(lat, lng, originalPlace) {
+            console.log(`[translateLocationWithAmap] start: lat=${lat}, lng=${lng}, orig="${originalPlace}"`);
+            
+            try {
+                // 尝试高德逆地理编码
+                const amapResult = await getAddressFromCoords(lat, lng);
+                console.log(`[translateLocationWithAmap] amap result:`, amapResult);
+                
+                if (amapResult) {
+                    // 获取有意义的地址信息：省 市 县（去除空字符串）
+                    const parts = [
+                        amapResult.province,
+                        amapResult.city,
+                        amapResult.district
+                    ].filter(s => s && s.trim() !== '' && s !== '国外' && s !== '未知');
+                    
+                    // 拼接后的字符串
+                    const addressStr = parts.join(' ').trim();
+                    
+                    // 只有拼接结果非空且有实际意义，才使用高德结果（国内地震）
+                    if (addressStr && addressStr.length > 0) {
+                        console.log(`[translateLocationWithAmap] domestic earthquake, using amap: ${addressStr}`);
+                        return addressStr;
+                    } else {
+                        console.log(`[translateLocationWithAmap] amap returned foreign or empty result, keeping english`);
+                    }
+                } else {
+                    console.log(`[translateLocationWithAmap] amap returned null, keeping english`);
+                }
+            } catch (e) {
+                console.warn(`[translateLocationWithAmap] amap exception:`, e.message);
+            }
+
+            // 国外地震一律显示英文原文，不进行翻译
+            console.log(`[translateLocationWithAmap] foreign earthquake or amap failed, returning original: "${originalPlace}"`);
+            return originalPlace;
+        }
+
+        // 解析类似 "140 km E of Place, Country" 的格式并翻译其中的地点/国家，保留距离与方向
+        async function parseAndTranslateLocation(text) {
+            if (!text) {
+                console.log(`[parseAndTranslateLocation] empty input`);
+                return text;
+            }
+            
+            const pattern = /^(\d+(?:\.\d+)?)\s*km\s*([NSEW]{1,2})\s*of\s*(.+)$/i;
+            const m = text.match(pattern);
+            
+            if (!m) {
+                console.log(`[parseAndTranslateLocation] pattern not matched for "${text}", calling translatePlace directly`);
+                const result = await translatePlace(text);
+                console.log(`[parseAndTranslateLocation] translatePlace result: "${result}"`);
+                return result;
+            }
+            
+            const distance = m[1];
+            const dir = m[2].toUpperCase();
+            const rest = m[3].trim();
+            const parts = rest.split(',').map(s => s.trim()).filter(Boolean);
+            const placeName = parts[0] || rest;
+            const country = parts.length > 1 ? parts.slice(1).join(', ') : '';
+
+            console.log(`[parseAndTranslateLocation] matched: distance=${distance}, dir=${dir}, place="${placeName}", country="${country}"`);
+
+            // 翻译地名与国家（并行）
+            const [placeTr, countryTr] = await Promise.all([
+                translatePlace(placeName),
+                country ? translatePlace(country) : Promise.resolve('')
+            ]);
+
+            console.log(`[parseAndTranslateLocation] after translate: place="${placeTr}", country="${countryTr}"`);
+
+            const dirMap = { N: '以北', S: '以南', E: '以东', W: '以西', NE: '以东北', NW: '以西北', SE: '以东南', SW: '以西南' };
+            const dirZh = dirMap[dir] || ('以' + dir);
+
+            // 组合中文表达：地名（国家）以东140公里
+            let result = placeTr;
+            if (countryTr) result = `${placeTr}（${countryTr}）`;
+            result = `${result}${dirZh}${distance}公里`;
+            console.log(`[parseAndTranslateLocation] final result: "${result}"`);
+            return result;
+        }
+
+        async function translateVisiblePlacesWithAmap() {
+            const elems = Array.from(document.querySelectorAll('.place[data-orig-place][data-lat][data-lng]'));
+            console.log(`[translateList] starting with ${elems.length} elements`);
+            if (!elems.length) return;
+            const cache = loadTranslationCache();
+            const batchSize = 3; // 高德API限制，减小并发数
+            
+            for (let i = 0; i < elems.length; i += batchSize) {
+                const batch = elems.slice(i, i + batchSize).map(async el => {
+                    try {
+                        const orig = el.getAttribute('data-orig-place') || '';
+                        const lat = parseFloat(el.getAttribute('data-lat'));
+                        const lng = parseFloat(el.getAttribute('data-lng'));
+                        
+                        if (!orig || isNaN(lat) || isNaN(lng)) {
+                            console.log(`[translateList] skip: orig="${orig}", lat=${lat}, lng=${lng}`);
+                            return;
+                        }
+                        if (containsChinese(orig)) {
+                            console.log(`[translateList] already chinese: "${orig}"`);
+                            return;
+                        }
+                        
+                        // 检查缓存
+                        if (cache[orig]) {
+                            console.log(`[translateList] cache hit: "${orig}" => "${cache[orig]}"`);
+                            const displayText = '📍 ' + cache[orig];
+                            el.innerHTML = displayText;
+                            console.log(`[translateList] DOM updated (cache): el.innerHTML = "${displayText}"`);
+                            return;
+                        }
+                        
+                        // 调用新的统一翻译函数
+                        console.log(`[translateList] calling translateLocationWithAmap for: "${orig}"`);
+                        const translated = await translateLocationWithAmap(lat, lng, orig);
+                        console.log(`[translateList] translateLocationWithAmap returned: "${translated}"`);
+                        
+                        // 验证结果
+                        if (!translated) {
+                            console.warn(`[translateList] translateLocationWithAmap returned falsy: "${translated}"`);
+                        } else if (translated === '') {
+                            console.warn(`[translateList] translateLocationWithAmap returned empty string`);
+                        }
+                        
+                        cache[orig] = translated;
+                        saveTranslationCache(cache);
+                        const displayText = '📍 ' + translated;
+                        el.innerHTML = displayText;
+                        console.log(`[translateList] DOM updated: orig="${orig}" => displayed="${displayText}"`);
+                    } catch (e) { 
+                        const orig = el.getAttribute('data-orig-place') || '';
+                        console.warn(`[translateList] error for "${orig}":`, e.message, e.stack);
+                        // 显示原始文本作为备选
+                        const displayText = '📍 ' + orig;
+                        el.innerHTML = displayText;
+                        console.log(`[translateList] DOM updated (error fallback): "${displayText}"`);
+                    }
+                });
+                await Promise.all(batch);
+            }
+            console.log(`[translateList] translation batch complete`);
+        }
+
+        async function translateVisiblePlaces() {
+            const elems = Array.from(document.querySelectorAll('.place[data-orig-place]'));
+            if (!elems.length) return;
+            const cache = loadTranslationCache();
+            const batchSize = 5;
+            for (let i = 0; i < elems.length; i += batchSize) {
+                const batch = elems.slice(i, i + batchSize).map(async el => {
+                    try {
+                        const orig = el.getAttribute('data-orig-place') || '';
+                        if (!orig) return;
+                        if (containsChinese(orig)) return;
+                        if (cache[orig]) {
+                            el.innerHTML = '📍 ' + cache[orig];
+                            return;
+                        }
+                        const translated = await parseAndTranslateLocation(orig);
+                        el.innerHTML = '📍 ' + translated;
+                    } catch (e) { /* ignore per-item errors */ }
+                });
+                await Promise.all(batch);
+            }
+        }
+
+        // 显示地震详情弹窗
+        async function showQuakeDetail(index) {
+            const quake = window.currentEarthquakeData[index];
+            if (!quake) return;
+
+            const props = quake.properties;
+            const geometry = quake.geometry;
+            const originalPlace = props.place || '未知地点';
+            const lat = geometry.coordinates[1];
+            const lng = geometry.coordinates[0];
+            
+            // 统一使用新的翻译方法：先高德，后百度
+            let placeText = originalPlace;
+            try {
+                const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
+                if (domesticOnlyEnabled && originalPlace) {
+                    placeText = await translateLocationWithAmap(lat, lng, originalPlace);
+                }
+            } catch (e) {
+                console.warn('place translation failed', e);
+            }
+
+            // 设置标题（包含地点）
+            document.getElementById('quakeDetailTitle').textContent = `M${props.mag.toFixed(1)} 级地震详情`;
+
+            // 构建详情网格
+            const detailGrid = document.getElementById('quakeDetailGrid');
+            detailGrid.innerHTML = `
+                <div class="quake-detail-item">
+                    <div class="quake-detail-label">震级</div>
+                    <div class="quake-detail-value">M${props.mag.toFixed(1)}</div>
+                </div>
+                <div class="quake-detail-item">
+                    <div class="quake-detail-label">位置</div>
+                    <div class="quake-detail-value">${placeText}</div>
+                </div>
+                <div class="quake-detail-item">
+                    <div class="quake-detail-label">经度</div>
+                    <div class="quake-detail-value">${geometry.coordinates[0].toFixed(4)}°</div>
+                </div>
+                <div class="quake-detail-item">
+                    <div class="quake-detail-label">纬度</div>
+                    <div class="quake-detail-value">${geometry.coordinates[1].toFixed(4)}°</div>
+                </div>
+                <div class="quake-detail-item">
+                    <div class="quake-detail-label">深度</div>
+                    <div class="quake-detail-value">${geometry.coordinates[2].toFixed(1)} km</div>
+                </div>
+                <div class="quake-detail-item">
+                    <div class="quake-detail-label">时间</div>
+                    <div class="quake-detail-value">${new Date(props.time).toLocaleString()}</div>
+                </div>
+                <div class="quake-detail-item">
+                    <div class="quake-detail-label">海啸风险</div>
+                    <div class="quake-detail-value">${props.tsunami === 1 ? '⚠️ 有海啸风险' : '无海啸风险'}</div>
+                </div>
+                <div class="quake-detail-item">
+                    <div class="quake-detail-label">数据来源</div>
+                    <div class="quake-detail-value">USGS</div>
+                </div>
+            `;
+
+            // 构建描述内容
+            const descriptionDiv = document.getElementById('quakeDetailDescription');
+            let description = '<h4>📊 地震分析</h4>';
+
+            if (props.mag >= 8.0) {
+                description += '<p>这是一场极强地震（M≥8.0），属于破坏性地震中的最高级别。这种地震通常会造成严重破坏，可能引发海啸，并对全球产生影响。</p>';
+            } else if (props.mag >= 7.0) {
+                description += '<p>这是一场强地震（M7.0-7.9），属于大地震级别。这种地震可能造成严重破坏，特别是在人口密集地区或建筑质量较差的区域。</p>';
+            }
+
+            description += '<h4>📍 地理位置</h4>';
+            description += `<p>地震发生于${placeText}，坐标为 (${geometry.coordinates[0].toFixed(4)}°E, ${geometry.coordinates[1].toFixed(4)}°N)，震源深度为${geometry.coordinates[2].toFixed(1)}公里。</p>`;
+
+            description += '<h4>⚠️ 影响评估</h4>';
+            if (props.tsunami === 1) {
+                description += '<p>该地震已被标记为可能引发海啸。请注意沿海地区的安全预警，并遵循当地应急部门的指导。</p>';
+            } else {
+                description += '<p>该地震暂未被标记为海啸风险，但仍需关注余震和次生灾害。</p>';
+            }
+
+            description += '<h4>🔗 数据来源</h4>';
+            description += '<p>本数据来源于美国地质勘探局（USGS）地震监测网络，提供全球地震实时监测服务。</p>';
+
+            descriptionDiv.innerHTML = description;
+
+            // 显示弹窗
+            document.getElementById('quakeDetailModal').style.display = 'block';
+        }
+
+        // 关闭弹窗
+        function closeQuakeDetail() {
+            document.getElementById('quakeDetailModal').style.display = 'none';
+        }
+
+        // ESC键关闭弹窗（全局绑定）
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeQuakeDetail();
+            }
+        });
 
         // 筛选功能
         let originalEarthquakeData = [];
@@ -836,8 +1438,10 @@
         }
 
         function filterEarthquakes() {
+            console.log('filterEarthquakes called');
             clearFilterMessage();
             const { startDate, endDate, minMag, maxMag } = getFilterValues();
+            console.log('Filter values:', { startDate, endDate, minMag, maxMag });
 
             if (!startDate || !endDate) {
                 setFilterMessage('❌ 请输入起始日期和结束日期', 'error');
@@ -903,18 +1507,29 @@
 
         function resetFilter() {
             clearFilterMessage();
-            document.getElementById('filterStartDate').value = '';
-            document.getElementById('filterEndDate').value = '';
-            document.getElementById('filterMinMag').value = '';
-            document.getElementById('filterMaxMag').value = '';
             
             // 重新加载默认数据
             initializeFilterDates();
             originalFetchEarthquakes();
         }
 
-        document.getElementById('filterApplyBtn').addEventListener('click', filterEarthquakes);
-        document.getElementById('filterResetBtn').addEventListener('click', resetFilter);
+        // 等待DOM加载完成后再绑定事件
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, binding events');
+            document.getElementById('filterApplyBtn').addEventListener('click', filterEarthquakes);
+            document.getElementById('filterResetBtn').addEventListener('click', resetFilter);
+            document.getElementById('quakeDetailClose').addEventListener('click', closeQuakeDetail);
+            const modalEl = document.getElementById('quakeDetailModal');
+            if (modalEl) {
+                modalEl.addEventListener('click', function(e) {
+                    if (e.target === this) closeQuakeDetail();
+                });
+            }
+            
+            // 初始化日期输入框为默认值（过去3年）
+            initializeFilterDates();
+            originalFetchEarthquakes();
+        });
 
         // 修改原始的 fetchEarthquakes 函数来保存原始数据
         const originalFetchEarthquakes = async function fetchEarthquakes() {
@@ -959,9 +1574,23 @@
             document.getElementById('filterMinMag').value = '5.5';
         }
 
-        initializeFilterDates();
-        originalFetchEarthquakes();
         setInterval(originalFetchEarthquakes, 24 * 60 * 60 * 1000);
     </script>
+
+    <!-- 地震详情弹窗 -->
+    <div class="quake-detail-modal" id="quakeDetailModal">
+        <div class="quake-detail-content">
+            <div class="quake-detail-header">
+                <div class="quake-detail-title" id="quakeDetailTitle">地震详情</div>
+                <button class="quake-detail-close" id="quakeDetailClose">&times;</button>
+            </div>
+            <div class="quake-detail-grid" id="quakeDetailGrid">
+                <!-- 详情内容将通过JavaScript动态填充 -->
+            </div>
+            <div class="quake-detail-description" id="quakeDetailDescription">
+                <!-- 描述内容将通过JavaScript动态填充 -->
+            </div>
+        </div>
+    </div>
 </body>
 </html>
