@@ -981,6 +981,13 @@
 
         // 翻译相关工具与缓存
         const PLACE_TRANSLATION_CACHE_KEY = 'placeTranslations_v1';
+        
+        // 百度翻译 API 配置
+        const BAIDU_TRANSLATE_CONFIG = {
+            appId: '20260417002596654',
+            secret: 'zAjlCqWP3MbVuiXzwMyX',
+            url: 'https://api.fanyi.baidu.com/api/trans/vip/translate'
+        };
 
         // 高德地图配置
         const AMAP_CONFIG = {
@@ -1003,18 +1010,19 @@
             return /[\u4e00-\u9fff]/.test(text);
         }
 
-        // 检查地震是否在中国（包括大陆、香港、澳门、台湾）
+        // 检查地震是否在中国境内
         async function isChinaDomesticEarthquake(lat, lng) {
             try {
                 const amapResult = await getAddressFromCoords(lat, lng);
                 if (!amapResult) return false;
                 
                 const province = amapResult.province || '';
+                const city = amapResult.city || '';
                 
-                // 高德返回中国有效省份时，说明在中国（包括港澳台）
-                const isDomestic = province && province.trim() !== '' && province !== '国外' && province !== '未知';
+                const isDomestic = province && province.trim() !== '' && province !== '国外' && province !== '未知'
+                                && city && city.trim() !== '' && city !== '国外' && city !== '未知';
                 
-                console.log(`[isChinaDomesticEarthquake] lat=${lat}, lng=${lng}, province="${province}", isDomestic=${isDomestic}`);
+                console.log(`[isChinaDomesticEarthquake] lat=${lat}, lng=${lng}, province="${province}", city="${city}", isDomestic=${isDomestic}`);
                 return isDomestic;
             } catch (e) {
                 console.warn(`[isChinaDomesticEarthquake] error:`, e.message);
@@ -1041,6 +1049,12 @@
             }
             
             return domestic;
+        }
+
+        // 生成百度翻译所需的 MD5 签名
+        function generateBaiduSign(query, salt) {
+            const str = BAIDU_TRANSLATE_CONFIG.appId + query + salt + BAIDU_TRANSLATE_CONFIG.secret;
+            return CryptoJS.MD5(str).toString();
         }
 
         // 调用高德逆地理编码 API（获取坐标的中文地址信息）
@@ -1074,7 +1088,62 @@
         }
 
         // 调用百度翻译 API
-        // 优化的地点翻译：仅国内地震使用高德逆地理编码，其他一律显示英文
+        async function translatePlace(text) {
+            if (!text) return text;
+            if (containsChinese(text)) return text;
+
+            const cache = loadTranslationCache();
+            if (cache[text]) {
+                console.log(`[translate] cache hit: "${text}" => "${cache[text]}"`);
+                return cache[text];
+            }
+
+            try {
+                const salt = Date.now();
+                const sign = generateBaiduSign(text, salt);
+                
+                console.log(`[translate] calling Baidu API for "${text}"`);
+                const response = await fetch(BAIDU_TRANSLATE_CONFIG.url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        q: text,
+                        from: 'auto',
+                        to: 'zh',
+                        appid: BAIDU_TRANSLATE_CONFIG.appId,
+                        salt: salt,
+                        sign: sign
+                    })
+                });
+
+                if (!response.ok) {
+                    console.warn(`[translate] Baidu API returned HTTP ${response.status}`);
+                    return text;
+                }
+
+                const result = await response.json();
+                console.log(`[translate] Baidu response:`, result);
+                if (result.trans_result && result.trans_result[0]) {
+                    const translated = result.trans_result[0].dst;
+                    if (!translated || translated.trim() === '') {
+                        console.warn(`[translate] Baidu returned empty string for "${text}", using original`);
+                        return text;
+                    }
+                    console.log(`[translate] success: "${text}" => "${translated}"`);
+                    cache[text] = translated;
+                    saveTranslationCache(cache);
+                    return translated;
+                } else {
+                    console.warn(`[translate] Baidu response has no trans_result for "${text}":`, result);
+                    return text;
+                }
+            } catch (e) {
+                console.warn(`[translate] error for "${text}":`, e.message);
+                return text;
+            }
+        }
+
+        // 优化的地点翻译：仅国内地震翻译为中文，国外一律显示英文
         async function translateLocationWithAmap(lat, lng, originalPlace) {
             console.log(`[translateLocationWithAmap] start: lat=${lat}, lng=${lng}, orig="${originalPlace}"`);
             
@@ -1094,12 +1163,12 @@
                     // 拼接后的字符串
                     const addressStr = parts.join(' ').trim();
                     
-                    // 只有拼接结果非空且有实际意义，才使用高德结果（中国境内地震）
+                    // 只有拼接结果非空且有实际意义，才使用高德结果（国内地震）
                     if (addressStr && addressStr.length > 0) {
-                        console.log(`[translateLocationWithAmap] using amap: ${addressStr}`);
+                        console.log(`[translateLocationWithAmap] domestic earthquake, using amap: ${addressStr}`);
                         return addressStr;
                     } else {
-                        console.log(`[translateLocationWithAmap] amap returned empty result, keeping english`);
+                        console.log(`[translateLocationWithAmap] amap returned foreign or empty result, keeping english`);
                     }
                 } else {
                     console.log(`[translateLocationWithAmap] amap returned null, keeping english`);
@@ -1108,9 +1177,54 @@
                 console.warn(`[translateLocationWithAmap] amap exception:`, e.message);
             }
 
-            // 其他区域一律显示英文原文，不进行翻译
-            console.log(`[translateLocationWithAmap] non-china earthquake or amap failed, returning original: "${originalPlace}"`);
+            // 国外地震一律显示英文原文，不进行翻译
+            console.log(`[translateLocationWithAmap] foreign earthquake or amap failed, returning original: "${originalPlace}"`);
             return originalPlace;
+        }
+
+        // 解析类似 "140 km E of Place, Country" 的格式并翻译其中的地点/国家，保留距离与方向
+        async function parseAndTranslateLocation(text) {
+            if (!text) {
+                console.log(`[parseAndTranslateLocation] empty input`);
+                return text;
+            }
+            
+            const pattern = /^(\d+(?:\.\d+)?)\s*km\s*([NSEW]{1,2})\s*of\s*(.+)$/i;
+            const m = text.match(pattern);
+            
+            if (!m) {
+                console.log(`[parseAndTranslateLocation] pattern not matched for "${text}", calling translatePlace directly`);
+                const result = await translatePlace(text);
+                console.log(`[parseAndTranslateLocation] translatePlace result: "${result}"`);
+                return result;
+            }
+            
+            const distance = m[1];
+            const dir = m[2].toUpperCase();
+            const rest = m[3].trim();
+            const parts = rest.split(',').map(s => s.trim()).filter(Boolean);
+            const placeName = parts[0] || rest;
+            const country = parts.length > 1 ? parts.slice(1).join(', ') : '';
+
+            console.log(`[parseAndTranslateLocation] matched: distance=${distance}, dir=${dir}, place="${placeName}", country="${country}"`);
+
+            // 翻译地名与国家（并行）
+            const [placeTr, countryTr] = await Promise.all([
+                translatePlace(placeName),
+                country ? translatePlace(country) : Promise.resolve('')
+            ]);
+
+            console.log(`[parseAndTranslateLocation] after translate: place="${placeTr}", country="${countryTr}"`);
+
+            const dirMap = { N: '以北', S: '以南', E: '以东', W: '以西', NE: '以东北', NW: '以西北', SE: '以东南', SW: '以西南' };
+            const dirZh = dirMap[dir] || ('以' + dir);
+
+            // 组合中文表达：地名（国家）以东140公里
+            let result = placeTr;
+            if (countryTr) result = `${placeTr}（${countryTr}）`;
+            result = `${result}${dirZh}${distance}公里`;
+            console.log(`[parseAndTranslateLocation] final result: "${result}"`);
+            return result;
         }
 
         async function translateVisiblePlacesWithAmap() {
