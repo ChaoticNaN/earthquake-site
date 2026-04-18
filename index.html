@@ -290,6 +290,206 @@
             border: 1px solid rgba(100,150,255,0.3);
         }
 
+        /* 震级类型对比说明 */
+        .magnitude-info {
+            max-width: 1400px;
+            margin: 25px auto 0;
+            padding: 20px;
+            background: rgba(100,150,255,0.12);
+            border: 1px solid rgba(100,150,255,0.3);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .magnitude-info-title {
+            color: #87CEEB;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .magnitude-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .magnitude-type {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 16px;
+            border-left: 4px solid #87CEEB;
+        }
+
+        .magnitude-type-name {
+            color: white;
+            font-size: 19px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .magnitude-type-desc {
+            color: #ddd;
+            font-size: 17px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .magnitude-feature {
+            color: #aaa;
+            font-size: 16px;
+            margin: 6px 0;
+            padding-left: 12px;
+            border-left: 2px solid rgba(135,206,235,0.5);
+        }
+
+        .magnitude-type.richter {
+            border-left-color: #ff8844;
+        }
+
+        .magnitude-type.richter .magnitude-type-name {
+            color: #ff8844;
+        }
+
+        .magnitude-comparison-note {
+            grid-column: 1 / -1;
+            background: rgba(255,221,153,0.15);
+            border: 1px solid rgba(255,221,153,0.3);
+            border-left: 4px solid #ffdd99;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #ffdd99;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 900px) {
+            .magnitude-comparison {
+                grid-template-columns: 1fr;
+            }
+            .magnitude-comparison-note {
+                grid-column: 1;
+            }
+        }
+
+        /* 深度科普区 */
+        .magnitude-detailed {
+            max-width: 1400px;
+            margin: 25px auto;
+            padding: 25px;
+            background: rgba(255, 107, 107, 0.08);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .detailed-title {
+            color: #ff8c8c;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .detailed-section {
+            margin-bottom: 25px;
+        }
+
+        .detailed-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detailed-section-title {
+            color: #ff6b6b;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(255, 107, 107, 0.3);
+        }
+
+        .detailed-section-content {
+            color: #ddd;
+            font-size: 15px;
+            line-height: 1.8;
+            margin-bottom: 12px;
+        }
+
+        .detailed-highlight {
+            background: rgba(255, 107, 107, 0.2);
+            padding: 12px 16px;
+            border-left: 4px solid #ff6b6b;
+            border-radius: 8px;
+            margin: 12px 0;
+            color: #ffcccc;
+        }
+
+        .magnitude-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .magnitude-table th {
+            background: rgba(255, 107, 107, 0.25);
+            color: #ff8c8c;
+            padding: 14px 12px;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(255, 107, 107, 0.3);
+        }
+
+        .magnitude-table td {
+            padding: 12px;
+            color: #ddd;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(255, 107, 107, 0.15);
+        }
+
+        .magnitude-table tr:hover {
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .magnitude-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .emphasis {
+            color: #ffaa88;
+            font-weight: 600;
+        }
+
+        .formula-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 15px 0;
+            color: #ddd;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .formula-block .var-explain {
+            color: #ffcccc;
+            margin: 8px 0 0 0;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
         /* 地震详情弹窗样式 */
         .quake-detail-modal {
             position: fixed;
@@ -471,6 +671,109 @@
             <div class="stat-card"><div class="stat-number" id="avgMagnitude">-</div><div class="stat-label">📈 平均震级</div></div>
             <div class="stat-card"><div class="stat-number" id="maxMagnitude">-</div><div class="stat-label">⚠️ 最大震级</div></div>
         </div>
+
+        <div class="magnitude-info">
+            <div class="magnitude-info-title">📐 震级说明：矩震级 VS 里氏震级的原理与差别</div>
+            <div class="magnitude-comparison">
+                <div class="magnitude-type">
+                    <div class="magnitude-type-name">🌍 矩震级 (Moment Magnitude, Mw)</div>
+                    <div class="magnitude-type-desc">
+                        <strong>原理：</strong>基于地壳岩石的物理变形量。通过测量地震产生的地壳运动"矩"（震源处岩石被破坏释放的能量的度量）来定义。
+                    </div>
+                    <div class="magnitude-feature">• 测量对象：地壳中岩石破裂释放的 <strong>总能量</strong></div>
+                    <div class="magnitude-feature">• 震级范围：<strong>理论无上限</strong>，可准确表示大地震</div>
+                    <div class="magnitude-feature">• 不饱和性：强震仍能准确反映（2011年日本Mw9.0）</div>
+                    <div class="magnitude-feature">• 国际标准：当代地震学统一采用的度量</div>
+                </div>
+                <div class="magnitude-type richter">
+                    <div class="magnitude-type-name">📊 里氏震级 (Richter Scale, ML)</div>
+                    <div class="magnitude-type-desc">
+                        <strong>原理：</strong>基于地震仪记录的波形振幅。通过测量地面的 <strong>运动幅度</strong> 来判断地震大小（对数尺度）。
+                    </div>
+                    <div class="magnitude-feature">• 测量对象：地面的 <strong>振动幅度</strong> 而非能量</div>
+                    <div class="magnitude-feature">• 震级上限：约<strong>6.8-7.0</strong>（易发生饱和）</div>
+                    <div class="magnitude-feature">• 饱和现象：大地震时振幅"不再增长"，无法真实反映</div>
+                    <div class="magnitude-feature">• 地区特性：受距离、地质条件影响，区域性较强</div>
+                </div>
+                <div class="magnitude-comparison-note">
+                    💡 <strong>核心差别：</strong>矩震级测的是"能量释放量"，里氏震级测的是"地面摇晃程度"。强地震时，地面摇晃可能饱和，但释放的能量仍在增加，所以矩震级≥里氏震级。本网站采用国际标准的矩震级(Mw)。
+                </div>
+            </div>
+        </div>
+
+        <div class="magnitude-detailed">
+            <div class="detailed-title">⚡ 为什么里氏震级会"饱和"？</div>
+            
+            <div class="detailed-section">
+                <div class="detailed-section-title">1️⃣ 里氏震级的"频率陷阱"</div>
+                <div class="detailed-section-content">
+                    里氏震级（1935年）基于伍德-安德森地震仪，该仪器记录的是<span class="emphasis">高频地震波（周期0.1~0.3秒）</span>，对中小地震敏感。但问题是：
+                </div>
+                <div class="detailed-highlight">
+                    <strong>大地震释放的能量频率更低：</strong>7级地震周期为几秒到十几秒，8级以上地震周期可达几十到上百秒。当地震仪遇到这些低频波时，指针会达到机械运动极限，使得8.5级和9.5级地震的测值几乎相同，但实际能量相差30多倍。
+                </div>
+            </div>
+
+            <div class="detailed-section">
+                <div class="detailed-section-title">2️⃣ 历史地震的实际对比</div>
+                <table class="magnitude-table">
+                    <thead>
+                        <tr>
+                            <th>地震事件</th>
+                            <th>里氏震级 (ML)</th>
+                            <th>矩震级 (Mw)</th>
+                            <th>实际能量</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1976年唐山地震</td>
+                            <td>~7.8 (饱和临界)</td>
+                            <td>7.6</td>
+                            <td>两者接近</td>
+                        </tr>
+                        <tr>
+                            <td>2004年苏门答腊地震</td>
+                            <td><span class="emphasis">8.7 (极限)</span></td>
+                            <td><span class="emphasis">9.1~9.3</span></td>
+                            <td><span class="emphasis">Mw能量是ML的约3倍</span></td>
+                        </tr>
+                        <tr>
+                            <td>1960年智利大地震</td>
+                            <td><span class="emphasis">8.5 (饱和)</span></td>
+                            <td><span class="emphasis">9.5</span></td>
+                            <td><span class="emphasis">Mw能量是ML的约5倍</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="detailed-section">
+                <div class="detailed-section-title">3️⃣ 矩震级的物理解决方案</div>
+                <div class="detailed-section-content">
+                    矩震级（1977年）不测波形振幅，而是直接计算<span class="emphasis">地震矩 M₀</span>——反映断层的真实物理尺寸：
+                </div>
+                <div class="formula-block">
+                    M₀ = μ × A × D<br/>
+                    <div class="var-explain">
+                        μ = 岩石剪切模量（常数）<br/>
+                        A = 断层破裂面积（长 × 深）<br/>
+                        D = 断层滑移量（错动距离）<br/>
+                        <br/>
+                        ※ 能量 E = M₀/2 × 10⁴ （线性关系，不会饱和）
+                    </div>
+                </div>
+                <div class="detailed-section-content">
+                    <strong>为什么不饱和？</strong>大地震的物理参数没有上限：
+                </div>
+                <div class="detailed-highlight">
+                    • 2004年苏门答腊地震：断层长 <span class="emphasis">1300公里</span>，滑移量几十米<br/>
+                    • 这些物理尺寸可以无限增长，因此矩震级可以准确反映任何大小的地震<br/>
+                    • 与能量有严格线性关系，真实且科学
+                </div>
+            </div>
+        </div>
+
         <div class="quake-list">
             <div class="quake-header"><span>震级</span><span>地点</span><span>时间</span><span>海啸</span></div>
             <div id="quakeList" class="loading">加载地震数据中...</div>
