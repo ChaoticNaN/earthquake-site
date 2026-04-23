@@ -1338,26 +1338,16 @@
             let quakes = data.features;
             const quakeListDiv = document.getElementById('quakeList');
             if (!quakes || quakes.length === 0) {
-                quakeListDiv.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px;">📭 暂无地震数据</td></tr>';
+                const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
+                quakeListDiv.innerHTML = domesticOnlyEnabled
+                    ? '<tr><td colspan="4" style="text-align: center; padding: 40px;">📭 筛选后暂无国内地震数据</td></tr>'
+                    : '<tr><td colspan="4" style="text-align: center; padding: 40px;">📭 暂无地震数据</td></tr>';
                 return;
-            }
-            
-            // 检查是否仅显示国内地震
-            const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
-            if (domesticOnlyEnabled) {
-                console.log(`[displayEarthquakes] filtering to domestic earthquakes only, total: ${quakes.length}`);
-                quakes = await filterDomesticEarthquakes(quakes);
-                console.log(`[displayEarthquakes] after filtering: ${quakes.length}`);
-                
-                if (quakes.length === 0) {
-                    quakeListDiv.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px;">📭 筛选后暂无国内地震数据</td></tr>';
-                    updateStats([]);
-                    return;
-                }
             }
             
             // 更新全局数据，确保点击时索引匹配
             window.currentEarthquakeData = quakes;
+            const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
             
             // 先显示原始英文地名
             let html = '';
@@ -1396,68 +1386,151 @@
             url: 'https://restapi.amap.com/v3/geocode/regeo'
         };
 
-        // 中国边界本地几何判断（简化版，多边形坐标顺序：[lng, lat]）
-        const CHINA_BBOX = {
-            minLat: 3.5,
-            maxLat: 54.0,
-            minLng: 73.0,
-            maxLng: 136.0
+        // 中国边界本地几何判断（Natural Earth 1:10m 提取并简化，坐标顺序：[lng, lat]）
+        // 筛选流程：先粗筛 -> 再多边形精筛（陆地或海域）
+        const CHINA_FILTER_BBOX = {
+            minLng: 70.0,
+            maxLng: 135.0,
+            minLat: 3.0,
+            maxLat: 54.0
         };
 
-        // 大陆轮廓 + 台湾 + 海南 + 香港 + 澳门（低精度围栏，优先保证筛选性能与稳定性）
         const CHINA_BOUNDARY_POLYGONS = [
-            // Mainland (simplified)
-            [
-                [73.6, 39.0], [75.0, 41.0], [77.5, 44.0], [81.0, 47.0], [86.0, 49.0], [92.0, 50.0],
-                [99.0, 50.5], [107.0, 50.5], [115.0, 50.0], [121.0, 49.0], [126.5, 47.5], [130.0, 46.5],
-                [133.0, 45.0], [134.8, 43.0], [134.5, 41.0], [132.5, 39.0], [130.5, 37.0], [129.0, 34.5],
-                [126.0, 31.0], [123.0, 28.0], [120.0, 25.0], [117.0, 23.0], [114.0, 22.0], [110.0, 21.0],
-                [106.0, 21.5], [102.0, 22.5], [99.0, 23.5], [96.0, 24.5], [93.0, 26.5], [90.5, 28.5],
-                [88.0, 28.0], [85.0, 29.0], [82.0, 31.0], [79.0, 33.5], [76.5, 36.0], [74.5, 37.8],
-                [73.6, 39.0]
-            ],
-            // Taiwan
-            [
-                [120.0, 21.8], [121.8, 21.8], [122.3, 23.5], [122.1, 25.4], [120.9, 25.5], [120.0, 24.2],
-                [120.0, 21.8]
-            ],
-            // Hainan
-            [
-                [108.5, 18.0], [111.2, 18.0], [111.3, 20.3], [109.5, 20.5], [108.5, 19.6], [108.5, 18.0]
-            ],
-            // Hong Kong
-            [
-                [113.75, 22.12], [114.55, 22.12], [114.55, 22.62], [113.75, 22.62], [113.75, 22.12]
-            ],
-            // Macao
-            [
-                [113.50, 22.08], [113.65, 22.08], [113.65, 22.25], [113.50, 22.25], [113.50, 22.08]
-            ]
+            // CHN mainland
+            [[78.917694, 33.386258], [78.721117, 33.994386], [78.976192, 34.309173], [78.296027, 34.624658], [78.044259, 35.491633], [76.166027, 35.806239], [75.849768, 36.644741], [74.38257, 37.126572], [75.164125, 37.400638], [74.891893, 37.599205], [74.835773, 38.455173], [73.816403, 38.586586], [73.632642, 39.448343], [73.976704, 40.043603], [74.835359, 40.511637], [75.559863, 40.63287], [75.681819, 40.291702], [76.313512, 40.343327], [76.860972, 41.013208], [78.074955, 41.039512], [78.658278, 41.532453], [80.231206, 42.033689], [80.143769, 42.644762], [80.793445, 43.14946], [80.338899, 44.121494], [80.492275, 44.727969], [79.858205, 44.90372], [81.665227, 45.347982], [82.539747, 45.123655], [82.631989, 45.415834], [82.291493, 45.533191], [83.021475, 47.205905], [84.739613, 46.814766], [85.498636, 47.051832], [85.718674, 48.358832], [86.565083, 48.527323], [86.859483, 49.105324], [87.816324, 49.165837], [87.983032, 48.552335], [90.3448, 47.658642], [91.047496, 46.566409], [90.651138, 45.493142], [90.873243, 45.186184], [93.525278, 44.951263], [95.397722, 44.280502], [95.318967, 44.017108], [96.357767, 42.724499], [101.524945, 42.537456], [102.034164, 42.18461], [104.97383, 41.586145], [106.767829, 42.286619], [110.406728, 42.768605], [111.933353, 43.696636], [111.397055, 44.387369], [111.958261, 45.084536], [113.604776, 44.739699], [114.533711, 45.3855], [115.667389, 45.454281], [116.568316, 46.290871], [117.393795, 46.57137], [119.85442, 46.65966], [119.699959, 47.159526], [118.542252, 47.966246], [115.914506, 47.683912], [115.51422, 48.131637], [116.684278, 49.823265], [117.836869, 49.50902], [119.31621, 50.092654], [119.137565, 50.392532], [120.77917, 52.117595], [120.72398, 52.542169], [120.032962, 52.760657], [120.874255, 53.28016], [123.614294, 53.563347], [125.621355, 53.062137], [126.555975, 52.130643], [127.590641, 50.208719], [127.538654, 49.789934], [130.674328, 48.870817], [130.674742, 48.063941], [131.023351, 47.682284], [132.524655, 47.707528], [133.091958, 48.10678], [134.718733, 48.263412], [134.772579, 47.710732], [134.183571, 47.3275], [133.902452, 46.258986], [133.09878, 45.10779], [131.853068, 45.337596], [130.933434, 44.841708], [131.280906, 43.380221], [131.103036, 42.910431], [130.407161, 42.735377], [130.530771, 42.53048], [129.879751, 42.996033], [129.703328, 42.442372], [128.034593, 41.993743], [128.14611, 41.376339], [126.679482, 41.735981], [126.007843, 40.899313], [124.137218, 39.842353], [123.252045, 39.817084], [121.179535, 38.720933], [121.117931, 38.943427], [121.942963, 39.399359], [121.223399, 39.528632], [122.30185, 40.502346], [121.867931, 40.995795], [120.981944, 40.826809], [118.926036, 39.130601], [117.715424, 39.111396], [117.716082, 38.378511], [118.950037, 38.097262], [119.259597, 37.715847], [118.969981, 37.593451], [119.145518, 37.17886], [119.7706, 37.151842], [120.738048, 37.83397], [121.570323, 37.428656], [122.688243, 37.409817], [122.507416, 36.898017], [120.75058, 36.616848], [120.949962, 36.459174], [120.627778, 36.116523], [120.097179, 36.226386], [120.298839, 35.973131], [119.192882, 35.000434], [119.192231, 34.718207], [120.257091, 34.311835], [120.830333, 32.697659], [121.922057, 31.754378], [120.131358, 31.943183], [119.612885, 32.35456], [120.006396, 31.950305], [120.750354, 31.978336], [121.95082, 30.982081], [120.147094, 30.198891], [120.621606, 30.372563], [120.792247, 30.066067], [121.254102, 30.348393], [122.129143, 29.903777], [121.44337, 29.524237], [121.971202, 29.593329], [121.942963, 29.195868], [121.408539, 29.161119], [121.62143, 28.735907], [121.142345, 28.845852], [121.656342, 28.339301], [121.345795, 28.145168], [121.168956, 28.384833], [120.965228, 27.987145], [120.559581, 28.112779], [120.868364, 27.882559], [120.517833, 27.201606], [120.195811, 27.297797], [120.421723, 27.146959], [120.031993, 26.899888], [120.134369, 26.646064], [119.552094, 26.749091], [119.681895, 26.317125], [119.949962, 26.364936], [119.458507, 25.982489], [119.093516, 26.145819], [119.695404, 26.002631], [119.449067, 25.687161], [119.654552, 25.35814], [119.305186, 25.60456], [119.10255, 25.420315], [119.344249, 25.242377], [118.87558, 25.243842], [119.01767, 24.960273], [118.572032, 24.885199], [118.620453, 24.545478], [117.79127, 24.467475], [118.126475, 24.26203], [117.591669, 23.737064], [117.416596, 23.946845], [117.257093, 23.615616], [116.523204, 23.418524], [116.804822, 23.236122], [116.508881, 23.234117], [116.494688, 22.939352], [113.890345, 22.452712], [113.528819, 23.01081], [113.830089, 23.117499], [113.417491, 23.096991], [113.212983, 22.904527], [113.59917, 22.57518], [113.483745, 22.155142], [113.165294, 22.575588], [113.401971, 22.179574], [112.911586, 21.856291], [112.550873, 21.772854], [112.397472, 22.068508], [112.286225, 21.708808], [111.890391, 21.925116], [111.630463, 21.529853], [110.431163, 21.191474], [110.35849, 21.435736], [110.156749, 20.848863], [110.53419, 20.478258], [110.280284, 20.252997], [109.917247, 20.239325], [109.661225, 20.927558], [109.944428, 21.493109], [109.594493, 21.746405], [109.138682, 21.401597], [108.573334, 21.951809], [108.470958, 21.561998], [107.348155, 21.599355], [106.653107, 21.968893], [106.526913, 22.43827], [106.789843, 22.797188], [105.853879, 22.90465], [105.312155, 23.36581], [103.959525, 22.507103], [103.646934, 22.799049], [103.029039, 22.430157], [102.467781, 22.768586], [102.218029, 22.410675], [101.689121, 22.478887], [101.75599, 21.143258], [101.244342, 21.192868], [101.082801, 21.766735], [100.162496, 21.436367], [99.942406, 22.045529], [99.14447, 22.153533], [99.538038, 22.926431], [98.859009, 23.179387], [98.658815, 23.961123], [98.865727, 24.145685], [97.516456, 23.942829], [97.800986, 25.237634], [98.690234, 25.865554], [98.679279, 27.577336], [98.294703, 27.536615], [97.670451, 28.511284], [97.323496, 28.217478], [96.301852, 28.420711], [96.592584, 28.757884], [96.195323, 28.941106], [96.366241, 29.257233], [96.141966, 29.368467], [95.367406, 29.036496], [94.599941, 29.316635], [92.683674, 27.91045], [91.952247, 27.72482], [90.225591, 28.358399], [89.561489, 28.13464], [88.971933, 27.312385], [88.610488, 28.105831], [87.369116, 27.803937], [86.15596, 28.156525], [85.98026, 27.885172], [85.692939, 28.335222], [85.087395, 28.304113], [85.160982, 28.595], [84.450845, 28.73388], [84.08973, 29.256613], [83.523718, 29.183594], [82.088767, 30.330088], [81.387518, 30.373909], [81.097768, 30.016929], [79.131397, 31.438433], [78.745095, 31.308116], [78.384807, 32.547549], [78.943429, 32.346373], [79.620673, 32.728725], [79.456096, 33.250399], [78.917694, 33.386258]],
+            // CHN Hainan
+            [[111.010509, 19.683783], [110.479177, 19.169257], [110.534434, 18.785631], [110.03419, 18.511949], [110.040294, 18.38227], [109.746104, 18.395901], [109.708751, 18.207221], [108.684906, 18.515204], [108.626964, 19.27497], [109.307384, 19.711127], [109.163341, 19.724799], [109.255138, 19.898342], [109.581716, 19.855699], [109.527029, 19.951361], [109.719005, 20.010647], [109.990082, 19.905951], [110.156993, 20.067369], [110.417735, 19.923407], [110.382986, 20.081041], [110.605805, 19.923163], [110.677908, 20.16356], [110.934581, 19.995063], [111.010509, 19.683783]],
+            // CHN nearshore island
+            [[121.844075, 31.607947], [121.986598, 31.503897], [121.817326, 31.44665], [121.176288, 31.784323], [121.322564, 31.829331], [121.844075, 31.607947]],
+            // TWN main island
+            [[121.905772, 24.9501], [121.400076, 23.145494], [120.948253, 22.526801], [120.840343, 21.904608], [120.714366, 21.937486], [120.621267, 22.295071], [120.055186, 23.043687], [120.184418, 23.76439], [121.059337, 25.050238], [121.580821, 25.283026], [121.905121, 25.106594], [121.905772, 24.9501]],
+            // TWN outlying island
+            [[118.394216, 24.522691], [118.463356, 24.431523], [118.283946, 24.401272], [118.282074, 24.477362], [118.381414, 24.473511], [118.394216, 24.522691]],
+            // HKG main
+            [[114.229828, 22.555813], [114.335134, 22.506415], [114.167491, 22.448065], [114.209321, 22.398668], [114.323741, 22.480048], [114.39975, 22.436143], [114.357595, 22.332424], [114.318614, 22.38939], [114.258393, 22.362087], [114.296723, 22.258287], [114.255544, 22.322333], [114.171886, 22.288723], [114.104828, 22.369859], [113.896983, 22.408759], [114.229828, 22.555813]],
+            // HKG island
+            [[113.846446, 22.197089], [113.892507, 22.292711], [114.054861, 22.33633], [114.000173, 22.216132], [113.846446, 22.197089]],
+            // MAC main
+            [[113.558604, 22.163031], [113.587494, 22.124864], [113.546804, 22.105373], [113.532237, 22.152615], [113.558604, 22.163031]],
+            // MAC reclaimed
+            [[113.536469, 22.217068], [113.55714, 22.20246], [113.52475, 22.173733], [113.536469, 22.217068]]
         ];
 
-        function pointInPolygon(point, polygon) {
-            const [x, y] = point;
+        // 海域简化围栏（精细化版本）
+        // 说明：
+        // - 按海区拆分：渤海、黄海中国一侧、东海中国一侧、南海（九段线主张范围的简化分区）
+        // - 再叠加排除区：琉球、菲律宾西部、越南沿海等，降低误判
+        const CHINA_SEA_POLYGONS = [
+            // 渤海（全域）
+            [[117.2, 37.0], [122.8, 37.0], [122.8, 41.3], [117.2, 41.3], [117.2, 37.0]],
+            // 黄海（中国一侧，靠近中韩分界线简化）
+            [[118.6, 31.6], [121.6, 31.5], [124.1, 33.0], [124.8, 35.5], [124.8, 38.8], [123.6, 40.5], [121.2, 40.7], [119.3, 39.1], [118.7, 36.1], [118.6, 31.6]],
+            // 东海（中国一侧，至冲绳海槽附近简化）
+            [[120.8, 23.8], [123.2, 23.8], [125.6, 25.0], [126.4, 27.6], [126.0, 30.2], [124.2, 31.8], [121.3, 30.8], [120.7, 27.4], [120.8, 23.8]],
+            // 南海 - 西沙周边（九段线内简化）
+            [[111.2, 18.3], [114.6, 18.0], [114.8, 15.8], [112.6, 15.1], [111.3, 16.1], [111.2, 18.3]],
+            // 南海 - 中沙周边（九段线内简化）
+            [[115.0, 17.5], [118.4, 17.2], [118.8, 15.0], [116.0, 14.2], [115.0, 17.5]],
+            // 南海 - 南沙西中部（九段线内简化）
+            [[110.5, 12.8], [116.8, 12.5], [117.2, 8.0], [113.8, 5.0], [110.0, 6.2], [109.6, 9.5], [110.5, 12.8]]
+        ];
+
+        // 海域误判排除区（优先处理琉球、菲律宾西侧、越南近海）
+        const CHINA_SEA_EXCLUSION_POLYGONS = [
+            // 琉球群岛近海（示例：26N,128E 应排除）
+            [[126.3, 24.0], [131.5, 24.0], [131.5, 29.2], [126.3, 29.2], [126.3, 24.0]],
+            // 菲律宾西部海域（示例：14N,119E / 10N,118E 应排除）
+            [[117.2, 7.8], [121.8, 7.8], [121.8, 16.8], [117.2, 16.8], [117.2, 7.8]],
+            // 越南东部沿海海域（示例：15N,112E 应排除）
+            [[108.2, 9.0], [113.8, 9.0], [113.8, 18.6], [108.2, 18.6], [108.2, 9.0]]
+        ];
+
+        function buildPolygonBBoxes(polygons) {
+            return polygons.map(polygon => {
+                let minLng = Infinity;
+                let maxLng = -Infinity;
+                let minLat = Infinity;
+                let maxLat = -Infinity;
+                for (const [lng, lat] of polygon) {
+                    if (lng < minLng) minLng = lng;
+                    if (lng > maxLng) maxLng = lng;
+                    if (lat < minLat) minLat = lat;
+                    if (lat > maxLat) maxLat = lat;
+                }
+                return { minLng, maxLng, minLat, maxLat };
+            });
+        }
+
+        const CHINA_LAND_POLYGON_BBOXES = buildPolygonBBoxes(CHINA_BOUNDARY_POLYGONS);
+        const CHINA_SEA_POLYGON_BBOXES = buildPolygonBBoxes(CHINA_SEA_POLYGONS);
+        const CHINA_SEA_EXCLUSION_BBOXES = buildPolygonBBoxes(CHINA_SEA_EXCLUSION_POLYGONS);
+
+        function isPointInAnyPolygons(lng, lat, polygons, polygonBBoxes) {
+            for (let i = 0; i < polygons.length; i++) {
+                const box = polygonBBoxes[i];
+                if (
+                    lng < box.minLng || lng > box.maxLng ||
+                    lat < box.minLat || lat > box.maxLat
+                ) {
+                    continue;
+                }
+                if (pointInPolygon(lng, lat, polygons[i])) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function isPointOnSegment(px, py, x1, y1, x2, y2, epsilon = 1e-9) {
+            const cross = (px - x1) * (y2 - y1) - (py - y1) * (x2 - x1);
+            if (Math.abs(cross) > epsilon) return false;
+            const dot = (px - x1) * (px - x2) + (py - y1) * (py - y2);
+            return dot <= epsilon;
+        }
+
+        function pointInPolygon(lng, lat, polygon) {
             let inside = false;
             for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
                 const [xi, yi] = polygon[i];
                 const [xj, yj] = polygon[j];
-                const intersect = ((yi > y) !== (yj > y))
-                    && (x < (xj - xi) * (y - yi) / ((yj - yi) || Number.EPSILON) + xi);
-                if (intersect) inside = !inside;
+
+                if (isPointOnSegment(lng, lat, xi, yi, xj, yj)) return true;
+
+                const intersects = ((yi > lat) !== (yj > lat))
+                    && (lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi);
+                if (intersects) inside = !inside;
             }
             return inside;
         }
 
-        function isInChinaBoundary(lng, lat) {
+        function isInChinaDomain(lng, lat) {
             if (!Number.isFinite(lng) || !Number.isFinite(lat)) return false;
 
             // 1) 矩形粗筛
-            if (lat < CHINA_BBOX.minLat || lat > CHINA_BBOX.maxLat || lng < CHINA_BBOX.minLng || lng > CHINA_BBOX.maxLng) {
+            if (
+                lng < CHINA_FILTER_BBOX.minLng ||
+                lng > CHINA_FILTER_BBOX.maxLng ||
+                lat < CHINA_FILTER_BBOX.minLat ||
+                lat > CHINA_FILTER_BBOX.maxLat
+            ) {
                 return false;
             }
 
-            // 2) 多边形精筛
-            return CHINA_BOUNDARY_POLYGONS.some(polygon => pointInPolygon([lng, lat], polygon));
+            // 2) 多边形精筛：陆地命中即国内
+            const inLand = isPointInAnyPolygons(lng, lat, CHINA_BOUNDARY_POLYGONS, CHINA_LAND_POLYGON_BBOXES);
+            if (inLand) return true;
+
+            // 3) 海域：先命中海域，再排除高误判区域
+            const inSea = isPointInAnyPolygons(lng, lat, CHINA_SEA_POLYGONS, CHINA_SEA_POLYGON_BBOXES);
+            if (!inSea) return false;
+
+            const inSeaExclusion = isPointInAnyPolygons(lng, lat, CHINA_SEA_EXCLUSION_POLYGONS, CHINA_SEA_EXCLUSION_BBOXES);
+            return !inSeaExclusion;
+        }
+
+        // 兼容已有调用
+        function isInChinaBoundary(lng, lat) {
+            return isInChinaDomain(lng, lat);
         }
 
         function loadTranslationCache() {
@@ -1475,7 +1548,7 @@
             return /[\u4e00-\u9fff]/.test(text);
         }
 
-        // 检查地震是否在中国（包括大陆、香港、澳门、台湾）- 本地判断，无需网络
+        // 检查地震是否在中国域内（陆地+领海/管辖海域）- 本地判断，无需网络
         function isChinaDomesticEarthquake(lat, lng) {
             const isDomestic = isInChinaBoundary(lng, lat);
             console.log(`[isChinaDomesticEarthquake] local check lat=${lat}, lng=${lng}, isDomestic=${isDomestic}`);
@@ -1489,6 +1562,11 @@
                 const lng = quake.geometry.coordinates[0];
                 return isChinaDomesticEarthquake(lat, lng);
             });
+        }
+
+        function getFinalDisplayEarthquakes(quakes) {
+            const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
+            return domesticOnlyEnabled ? filterDomesticEarthquakes(quakes) : quakes;
         }
 
         // 调用高德逆地理编码 API（获取坐标的中文地址信息）
@@ -1802,6 +1880,51 @@
             loadEarthquakesWithFilter(startDate, endDate, minMag, maxMag);
         }
 
+        function rerenderByCurrentToggle() {
+            const sorted = [...(originalEarthquakeData || [])].sort((a, b) => b.properties.mag - a.properties.mag);
+            const finalDisplayData = getFinalDisplayEarthquakes(sorted);
+            displayEarthquakes({ features: finalDisplayData });
+            updateStats(finalDisplayData);
+            if (window.updateGlobeMarkers) window.updateGlobeMarkers(finalDisplayData);
+            if (window.updateMercatorMarkers) window.updateMercatorMarkers(finalDisplayData);
+            setFilterMessage(`📊 当前显示 ${finalDisplayData.length} 条地震数据`, 'info');
+        }
+
+        function runChinaDomainRegressionChecks() {
+            const cases = [
+                // 重点误判回归点（应排除）
+                { name: 'RyukyuSea', lat: 26.0, lng: 128.0, expected: false },
+                { name: 'PhilippineWest', lat: 14.0, lng: 119.0, expected: false },
+                { name: 'PalawanNW', lat: 10.0, lng: 118.0, expected: false },
+                { name: 'VietnamEast', lat: 15.0, lng: 112.0, expected: false },
+                // 正向覆盖点（应包含）
+                { name: 'Bohai', lat: 39.2, lng: 120.5, expected: true },
+                { name: 'EastChinaSeaCN', lat: 28.5, lng: 124.5, expected: true },
+                { name: 'SouthChinaSeaCN', lat: 9.8, lng: 113.2, expected: true },
+                { name: 'Mainland', lat: 31.2, lng: 121.5, expected: true }
+            ];
+
+            const results = cases.map(item => {
+                const actual = isInChinaDomain(item.lng, item.lat);
+                return {
+                    case: item.name,
+                    lat: item.lat,
+                    lng: item.lng,
+                    expected: item.expected,
+                    actual,
+                    pass: actual === item.expected
+                };
+            });
+
+            const passCount = results.filter(r => r.pass).length;
+            console.group(`[china-domain-regression] ${passCount}/${results.length} passed`);
+            console.table(results);
+            if (passCount !== results.length) {
+                console.warn('[china-domain-regression] mismatch detected, please inspect sea polygons/exclusions.');
+            }
+            console.groupEnd();
+        }
+
         async function loadEarthquakesWithFilter(queryStartDate, queryEndDate, queryMinMag, queryMaxMag) {
             const quakeListDiv = document.getElementById('quakeList');
             try {
@@ -1831,13 +1954,14 @@
                     setFilterMessage(`✅ 筛选成功！共找到 ${filtered.length} 条数据`, 'success');
                 }
 
-                window.currentEarthquakeData = filtered;
                 originalEarthquakeData = [...filtered];
                 filtered.sort((a, b) => b.properties.mag - a.properties.mag);
-                displayEarthquakes({ features: filtered });
-                updateStats(filtered);
-                if (window.updateGlobeMarkers) window.updateGlobeMarkers(filtered);
-                if (window.updateMercatorMarkers) window.updateMercatorMarkers(filtered);
+                const finalDisplayData = getFinalDisplayEarthquakes(filtered);
+                window.currentEarthquakeData = finalDisplayData;
+                displayEarthquakes({ features: finalDisplayData });
+                updateStats(finalDisplayData);
+                if (window.updateGlobeMarkers) window.updateGlobeMarkers(finalDisplayData);
+                if (window.updateMercatorMarkers) window.updateMercatorMarkers(finalDisplayData);
             } catch (error) {
                 quakeListDiv.innerHTML = `<div class="error">❌ 加载失败：${error.message}<br>请检查网络连接或调整查询条件</div>`;
                 setFilterMessage(`❌ 加载失败：${error.message}`, 'error');
@@ -1858,6 +1982,7 @@
             console.log('DOM loaded, binding events');
             document.getElementById('filterApplyBtn').addEventListener('click', filterEarthquakes);
             document.getElementById('filterResetBtn').addEventListener('click', resetFilter);
+            document.getElementById('domesticOnlyToggle')?.addEventListener('change', rerenderByCurrentToggle);
             document.getElementById('quakeDetailClose').addEventListener('click', closeQuakeDetail);
             const modalEl = document.getElementById('quakeDetailModal');
             if (modalEl) {
@@ -1868,6 +1993,7 @@
             
             // 初始化日期输入框为默认值（过去3年）
             initializeFilterDates();
+            runChinaDomainRegressionChecks();
             originalFetchEarthquakes();
         });
 
@@ -1880,16 +2006,17 @@
                 if (!response.ok) throw new Error('网络请求失败');
                 const data = await response.json();
                 originalEarthquakeData = data.features || [];
-                window.currentEarthquakeData = [...originalEarthquakeData];
-                window.currentEarthquakeData.sort((a, b) => b.properties.mag - a.properties.mag);
+                const sortedData = [...originalEarthquakeData].sort((a, b) => b.properties.mag - a.properties.mag);
+                const finalDisplayData = getFinalDisplayEarthquakes(sortedData);
+                window.currentEarthquakeData = finalDisplayData;
                 
-                displayEarthquakes({ features: window.currentEarthquakeData });
-                updateStats(window.currentEarthquakeData);
+                displayEarthquakes({ features: finalDisplayData });
+                updateStats(finalDisplayData);
                 clearFilterMessage();
-                setFilterMessage(`📊 已加载 ${window.currentEarthquakeData.length} 条地震数据`, 'info');
+                setFilterMessage(`📊 已加载 ${finalDisplayData.length} 条地震数据`, 'info');
                 
-                if (window.updateGlobeMarkers) window.updateGlobeMarkers(window.currentEarthquakeData);
-                if (window.updateMercatorMarkers) window.updateMercatorMarkers(window.currentEarthquakeData);
+                if (window.updateGlobeMarkers) window.updateGlobeMarkers(finalDisplayData);
+                if (window.updateMercatorMarkers) window.updateMercatorMarkers(finalDisplayData);
             } catch (error) {
                 quakeListDiv.innerHTML = `<div class="error">❌ 加载失败：${error.message}<br>请检查网络连接</div>`;
                 console.error('获取地震数据失败:', error);
