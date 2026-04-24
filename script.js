@@ -2,7 +2,7 @@
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
                 
-        // 瀛樺偍鍦伴渿鏁版嵁鐢ㄤ簬鏍囨敞
+        // 注释
         let currentEarthquakes = [];
         
         const container = document.getElementById('globeContainer');
@@ -28,7 +28,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         controls.rotateSpeed = 0.8;
         controls.zoomSpeed = 0.8;
         
-        // 鏄熺┖绮掑瓙
+        // 閺勭喓鈹栫划鎺戠摍
         const starGeometry = new THREE.BufferGeometry();
         const starCount = 2000;
         const starPositions = new Float32Array(starCount * 3);
@@ -140,16 +140,16 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         
         window.updateGlobeMarkers = updateGlobeMarkers;
         
-        // ---------- 杈呭姪锛氱粡绾害鏍煎紡鍖?(鍗楀寳绾?/ 涓滆タ缁? ----------
+        // 注释
         function formatLatLon(lat, lon) {
             const latAbs = Math.abs(lat).toFixed(1);
             const latDir = lat >= 0 ? 'N' : 'S';
             const lonAbs = Math.abs(lon).toFixed(1);
-            const lonDir = lon >= 0 ? 'W' : 'E';
-            return `${latAbs}掳${latDir} , ${lonAbs}掳${lonDir}`;
+            const lonDir = lon >= 0 ? 'E' : 'W';
+            return `${latAbs}°${latDir} , ${lonAbs}°${lonDir}`;
         }
         
-        // 鑾峰彇澶槼鐩村皠鐐圭粡绾害 (杩斿洖鏁板€?
+        // 注释
         function getSubSolarPointLatLon() {
             const now = new Date();
             const utcHours = now.getUTCHours();
@@ -164,7 +164,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             return { lat: deltaDeg, lon: lonDeg };
         }
         
-        // 璁＄畻澶槼鏂瑰悜鍚戦噺 (鐢ㄤ簬鍏夌収)
+        // 鐠侊紕鐣绘径顏堟Ъ閺傜懓鎮滈崥鎴﹀櫤 (閻劋绨崗澶屽弾)
         function getSolarDirectionVector() {
             const now = new Date();
             const utcYear = now.getUTCFullYear();
@@ -235,21 +235,21 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             const sunHeightFactor = Math.max(0.2, Math.min(1.2, (sunY + 0.5) * 0.9 + 0.6));
             sunLight.intensity = intensityBase * sunHeightFactor;
             
-            // 鏇存柊tip锛屼娇鐢ㄥ崡鍖楃含/涓滆タ缁忔牸寮?
+            // 注释
             const subPoint = getSubSolarPointLatLon();
             const tipDiv = document.getElementById('sunPosTip');
             if (tipDiv) {
-                tipDiv.innerHTML = `鈽€锔?瀹炴椂鏃ョ収 | 鐩村皠鐐? ${formatLatLon(subPoint.lat, subPoint.lon)}<br>馃晵 鍩轰簬UTC鏃堕棿`;
+                tipDiv.innerHTML = `☀️ 实时日照 | 直射点 ${formatLatLon(subPoint.lat, subPoint.lon)}<br>🕒 基于 UTC 时间`;
             }
         }
-        // 鏇存柊鏃堕棿鏄剧ず (涔熶娇鐢ㄥ崡鍖楃含/涓滆タ缁?
+        // 注释
         function updateUITime() {
             const now = new Date();
             const utcStr = now.toUTCString();
             const sub = getSubSolarPointLatLon();
             const el = document.getElementById('realTimeDisplay');
             if (el) {
-                el.innerHTML = `馃晵 ${utcStr} | 鈽€锔?澶槼鐩村皠: ${formatLatLon(sub.lat, sub.lon)}`;
+                el.innerHTML = `🕒 ${utcStr} | ☀️ 太阳直射: ${formatLatLon(sub.lat, sub.lon)}`;
             }
         }
         
@@ -282,7 +282,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         window.updateGlobeMarkers = updateGlobeMarkers;
     
 
-        // 澧ㄥ崱鎵樺湴鍥剧浉鍏冲彉閲?
+        // 注释
         let mercatorSvg = null;
         let currentProjection = null;
         let worldDataCache = null;
@@ -376,14 +376,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                         .text(mag.toFixed(1));
                 }
                 group.append("title")
-                    .text(`${quake.properties.place}\n闇囩骇: M${mag.toFixed(1)}\n鏃堕棿: ${new Date(quake.properties.time).toLocaleString()}`);
+                    .text(`${quake.properties.place}\n震级: M${mag.toFixed(1)}\n时间: ${new Date(quake.properties.time).toLocaleString()}`);
             });
         }
         
         window.updateMercatorMarkers = updateMercatorMarkers;
     
 
-        // 璁＄畻杩囧幓3骞寸殑鏃ユ湡鑼冨洿
+        // 鐠侊紕鐣绘潻鍥у箵3楠炲娈戦弮銉︽埂閼煎啫娲?
         const endDate = new Date();
         const startDate = new Date();
         startDate.setFullYear(endDate.getFullYear() - 3);
@@ -395,11 +395,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             return `${year}-${month}-${day}`;
         }
 
-        // 鍔ㄦ€佹瀯閫犲悗绔疉PI URL
+        // 注释
         function buildEarthquakeApiUrl(queryStartDate, queryEndDate, queryMinMag, queryMaxMag) {
             const formattedStart = formatDate(new Date(queryStartDate));
             const formattedEnd = formatDate(new Date(queryEndDate));
-            const minMag = Math.max(0, queryMinMag || 5.5); // 鏈€灏忓厑璁镐负0
+            const minMag = Math.max(0, queryMinMag || 5.5); // 最小值允许为 0
             const maxMag = Number.isFinite(queryMaxMag) ? queryMaxMag : '';
             const params = new URLSearchParams({
                 start: formattedStart,
@@ -450,13 +450,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             updateSortButtonActiveState();
 
             if (extraMessage) {
-                setFilterMessage(`${extraMessage}锛堝綋鍓嶆樉绀?${finalDisplayData.length} 鏉★級`, 'info');
+                setFilterMessage(`${extraMessage}（当前显示 ${finalDisplayData.length} 条）`, 'info');
             }
         }
 
         function setSort(field, order) {
             currentSortState = { field, order };
-            applyCurrentView(`鎺掑簭宸插垏鎹細${field === 'mag' ? '闇囩骇' : '鏃堕棿'}${order === 'asc' ? '姝ｅ簭' : '閫嗗簭'}`);
+            applyCurrentView(`排序已切换：${field === 'mag' ? '震级' : '时间'}${order === 'asc' ? '正序' : '逆序'}`);
         }
 
         function injectSortControlsIfNeeded() {
@@ -469,11 +469,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             sortWrap.className = 'quake-sort-controls';
             sortWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 12px;';
             sortWrap.innerHTML = `
-                <span style="font-size:13px;color:#555;">鎺掑簭锛?/span>
-                <button type="button" class="sort-btn" data-sort-field="mag" data-sort-order="desc">闇囩骇鈫?/button>
-                <button type="button" class="sort-btn" data-sort-field="mag" data-sort-order="asc">闇囩骇鈫?/button>
-                <button type="button" class="sort-btn" data-sort-field="time" data-sort-order="desc">鏃堕棿鈫?/button>
-                <button type="button" class="sort-btn" data-sort-field="time" data-sort-order="asc">鏃堕棿鈫?/button>
+                <span style="font-size:13px;color:#555;">排序：</span>
+                <button type="button" class="sort-btn" data-sort-field="mag" data-sort-order="desc">震级↓</button>
+                <button type="button" class="sort-btn" data-sort-field="mag" data-sort-order="asc">震级↑</button>
+                <button type="button" class="sort-btn" data-sort-field="time" data-sort-order="desc">时间↓</button>
+                <button type="button" class="sort-btn" data-sort-field="time" data-sort-order="asc">时间↑</button>
             `;
             quakeListWrap.parentNode.insertBefore(sortWrap, quakeListWrap);
         }
@@ -551,19 +551,18 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             let quakes = data.features;
             const quakeListDiv = document.getElementById('quakeList');
             const renderVersion = ++currentListRenderVersion;
+
             if (!quakes || quakes.length === 0) {
                 const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
                 quakeListDiv.innerHTML = domesticOnlyEnabled
-                    ? '<tr><td colspan="4" style="text-align: center; padding: 40px;">馃摥 绛涢€夊悗鏆傛棤鍥藉唴鍦伴渿鏁版嵁</td></tr>'
-                    : '<tr><td colspan="4" style="text-align: center; padding: 40px;">馃摥 鏆傛棤鍦伴渿鏁版嵁</td></tr>';
+                    ? '<tr><td colspan="4" style="text-align: center; padding: 40px;">📭 筛选后暂无国内地震数据</td></tr>'
+                    : '<tr><td colspan="4" style="text-align: center; padding: 40px;">📭 暂无地震数据</td></tr>';
                 return;
             }
-            
-            // 鏇存柊鍏ㄥ眬鏁版嵁锛岀‘淇濈偣鍑绘椂绱㈠紩鍖归厤
+
             window.currentEarthquakeData = quakes;
             const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
-            
-            // 鍏堟樉绀哄師濮嬭嫳鏂囧湴鍚?
+
             let html = '';
             for (let i = 0; i < quakes.length; i++) {
                 const quake = quakes[i];
@@ -572,10 +571,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 const isMajor = mag >= 7;
                 const clickAttr = isMajor ? ` onclick="showQuakeDetail(${i})"` : '';
                 const classAttr = isMajor ? ' class="quake-item-major"' : '';
-                const placeText = props.place || '鏈煡鍦扮偣';
+                const placeText = props.place || '未知地点';
                 const placeEsc = escapeHtml(placeText);
                 const placeKey = getPlaceCacheKey(placeText, quake.geometry.coordinates[1], quake.geometry.coordinates[0]);
                 const placeKeyEsc = escapeHtml(placeKey);
+
                 html += `
                     <tr${classAttr}${clickAttr} data-quake-index="${i}">
                         <td><span class="magnitude ${getMagnitudeClass(mag)}">M${mag.toFixed(1)}${isMajor ? ' ⭐' : ''}</span></td>
@@ -585,21 +585,22 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                     </tr>
                 `;
             }
+
             quakeListDiv.innerHTML = html;
-            
-            // 缈昏瘧鍥藉唴鍦伴渿鍦扮偣鍚嶏紙闈為樆濉烇級
+
             try {
                 if (domesticOnlyEnabled) translateVisiblePlacesWithAmap(renderVersion);
-            } catch (e) { console.warn('translateVisiblePlacesWithAmap error', e); }
+            } catch (e) {
+                console.warn('translateVisiblePlacesWithAmap error', e);
+            }
         }
 
-        // 缈昏瘧鐩稿叧宸ュ叿涓庣紦瀛?
         const PLACE_TRANSLATION_CACHE_KEY = 'placeTranslations_v2';
 
         const TRANSLATE_API_URL = '/api/translate';
 
-        // 涓浗杈圭晫鏈湴鍑犱綍鍒ゆ柇锛圢atural Earth 1:10m 鎻愬彇骞剁畝鍖栵紝鍧愭爣椤哄簭锛歔lng, lat]锛?
-        // 绛涢€夋祦绋嬶細鍏堢矖绛?-> 鍐嶅杈瑰舰绮剧瓫锛堥檰鍦版垨娴峰煙锛?
+        // 注释
+        // 注释
         const CHINA_FILTER_BBOX = {
             minLng: 70.0,
             maxLng: 135.0,
@@ -628,32 +629,32 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             [[113.536469, 22.217068], [113.55714, 22.20246], [113.52475, 22.173733], [113.536469, 22.217068]]
         ];
 
-        // 娴峰煙绠€鍖栧洿鏍忥紙绮剧粏鍖栫増鏈級
-        // 璇存槑锛?
-        // - 鎸夋捣鍖烘媶鍒嗭細娓ゆ捣銆侀粍娴蜂腑鍥戒竴渚с€佷笢娴蜂腑鍥戒竴渚с€佸崡娴凤紙涔濇绾夸富寮犺寖鍥寸殑绠€鍖栧垎鍖猴級
-        // - 鍐嶅彔鍔犳帓闄ゅ尯锛氱悏鐞冦€佽彶寰嬪瑗块儴銆佽秺鍗楁部娴风瓑锛岄檷浣庤鍒?
+        // 注释
+        // 鐠囧瓨妲戦敍?
+        // 注释
+        // 注释
         const CHINA_SEA_POLYGONS = [
-            // 娓ゆ捣锛堝叏鍩燂級
+            // 注释
             [[117.2, 37.0], [122.8, 37.0], [122.8, 41.3], [117.2, 41.3], [117.2, 37.0]],
-            // 榛勬捣锛堜腑鍥戒竴渚э紝闈犺繎涓煩鍒嗙晫绾跨畝鍖栵級
+            // 注释
             [[118.6, 31.6], [121.6, 31.5], [124.1, 33.0], [124.8, 35.5], [124.8, 38.8], [123.6, 40.5], [121.2, 40.7], [119.3, 39.1], [118.7, 36.1], [118.6, 31.6]],
-            // 涓滄捣锛堜腑鍥戒竴渚э紝鑷冲啿缁虫捣妲介檮杩戠畝鍖栵級
+            // 注释
             [[120.8, 23.8], [123.2, 23.8], [125.6, 25.0], [126.4, 27.6], [126.0, 30.2], [124.2, 31.8], [121.3, 30.8], [120.7, 27.4], [120.8, 23.8]],
-            // 鍗楁捣 - 瑗挎矙鍛ㄨ竟锛堜節娈电嚎鍐呯畝鍖栵級
+            // 注释
             [[111.2, 18.3], [114.6, 18.0], [114.8, 15.8], [112.6, 15.1], [111.3, 16.1], [111.2, 18.3]],
-            // 鍗楁捣 - 涓矙鍛ㄨ竟锛堜節娈电嚎鍐呯畝鍖栵級
+            // 注释
             [[115.0, 17.5], [118.4, 17.2], [118.8, 15.0], [116.0, 14.2], [115.0, 17.5]],
-            // 鍗楁捣 - 鍗楁矙瑗夸腑閮紙涔濇绾垮唴绠€鍖栵級
+            // 注释
             [[110.5, 12.8], [116.8, 12.5], [117.2, 8.0], [113.8, 5.0], [110.0, 6.2], [109.6, 9.5], [110.5, 12.8]]
         ];
 
-        // 娴峰煙璇垽鎺掗櫎鍖猴紙浼樺厛澶勭悊鐞夌悆銆佽彶寰嬪瑗夸晶銆佽秺鍗楄繎娴凤級
+        // 注释
         const CHINA_SEA_EXCLUSION_POLYGONS = [
-            // 鐞夌悆缇ゅ矝杩戞捣锛堢ず渚嬶細26N,128E 搴旀帓闄わ級
+            // 注释
             [[126.3, 24.0], [131.5, 24.0], [131.5, 29.2], [126.3, 29.2], [126.3, 24.0]],
-            // 鑿插緥瀹捐タ閮ㄦ捣鍩燂紙绀轰緥锛?4N,119E / 10N,118E 搴旀帓闄わ級
+            // 注释
             [[117.2, 7.8], [121.8, 7.8], [121.8, 16.8], [117.2, 16.8], [117.2, 7.8]],
-            // 瓒婂崡涓滈儴娌挎捣娴峰煙锛堢ず渚嬶細15N,112E 搴旀帓闄わ級
+            // 注释
             [[108.2, 9.0], [113.8, 9.0], [113.8, 18.6], [108.2, 18.6], [108.2, 9.0]]
         ];
 
@@ -718,7 +719,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         function isInChinaDomain(lng, lat) {
             if (!Number.isFinite(lng) || !Number.isFinite(lat)) return false;
 
-            // 1) 鐭╁舰绮楃瓫
+            // 1) 閻晛鑸扮划妤冪摣
             if (
                 lng < CHINA_FILTER_BBOX.minLng ||
                 lng > CHINA_FILTER_BBOX.maxLng ||
@@ -728,11 +729,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 return false;
             }
 
-            // 2) 澶氳竟褰㈢簿绛涳細闄嗗湴鍛戒腑鍗冲浗鍐?
+            // 注释
             const inLand = isPointInAnyPolygons(lng, lat, CHINA_BOUNDARY_POLYGONS, CHINA_LAND_POLYGON_BBOXES);
             if (inLand) return true;
 
-            // 3) 娴峰煙锛氬厛鍛戒腑娴峰煙锛屽啀鎺掗櫎楂樿鍒ゅ尯鍩?
+            // 注释
             const inSea = isPointInAnyPolygons(lng, lat, CHINA_SEA_POLYGONS, CHINA_SEA_POLYGON_BBOXES);
             if (!inSea) return false;
 
@@ -740,7 +741,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             return !inSeaExclusion;
         }
 
-        // 鍏煎宸叉湁璋冪敤
+        // 注释
         function isInChinaBoundary(lng, lat) {
             return isInChinaDomain(lng, lat);
         }
@@ -760,14 +761,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             return /[\u4e00-\u9fff]/.test(text);
         }
 
-        // 妫€鏌ュ湴闇囨槸鍚﹀湪涓浗鍩熷唴锛堥檰鍦?棰嗘捣/绠¤緰娴峰煙锛? 鏈湴鍒ゆ柇锛屾棤闇€缃戠粶
+        // 注释
         function isChinaDomesticEarthquake(lat, lng) {
             const isDomestic = isInChinaBoundary(lng, lat);
             console.log(`[isChinaDomesticEarthquake] local check lat=${lat}, lng=${lng}, isDomestic=${isDomestic}`);
             return isDomestic;
         }
 
-        // 鎵归噺杩囨护鍥藉唴鍦伴渿锛圤(N) 鏈湴璁＄畻锛?
+        // 注释
         function filterDomesticEarthquakes(quakes) {
             return quakes.filter(quake => {
                 const lat = quake.geometry.coordinates[1];
@@ -781,7 +782,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             return domesticOnlyEnabled ? filterDomesticEarthquakes(quakes) : quakes;
         }
 
-        // 璋冪敤楂樺痉閫嗗湴鐞嗙紪鐮?API锛堣幏鍙栧潗鏍囩殑涓枃鍦板潃淇℃伅锛?
+        // 注释
         async function getAddressFromCoords(lat, lng, originalPlace) {
             try {
                 const response = await fetch(TRANSLATE_API_URL, {
@@ -800,7 +801,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             }
         }
 
-        // 浠呭浗鍐呭湴闇囪皟鐢ㄥ悗绔炕璇戯紝鍏朵粬涓€寰嬫樉绀鸿嫳鏂?
+        // 注释
         async function translateLocationWithAmap(lat, lng, originalPlace) {
             console.log(`[translateLocationWithAmap] start: lat=${lat}, lng=${lng}, orig="${originalPlace}"`);
             
@@ -823,7 +824,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             return originalPlace;
         }
 
-                // 灏濊瘯楂樺痉閫嗗湴鐞嗙紪鐮?
+                // 注释
 
         async function translateVisiblePlacesWithAmap(renderVersion = currentListRenderVersion) {
             const elems = Array.from(document.querySelectorAll('.place[data-orig-place][data-lat][data-lng]'));
@@ -889,7 +890,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                         if (!orig) return;
                         if (containsChinese(orig)) return;
                         if (cache[orig]) {
-                            el.innerHTML = '馃搷 ' + cache[orig];
+                            el.innerHTML = '📍 ' + cache[orig];
                             return;
                         }
                         el.innerHTML = '?? ' + orig;
@@ -899,7 +900,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             }
         }
 
-        // 显示地震详情弹窗
+        // 注释
         async function showQuakeDetail(index) {
             const quake = window.currentEarthquakeData[index];
             if (!quake) return;
@@ -953,19 +954,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             document.getElementById('quakeDetailModal').style.display = 'block';
         }
 
-        // 鍏抽棴寮圭獥
         function closeQuakeDetail() {
             document.getElementById('quakeDetailModal').style.display = 'none';
         }
 
-        // ESC閿叧闂脊绐楋紙鍏ㄥ眬缁戝畾锛?
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeQuakeDetail();
             }
         });
 
-        // 绛涢€夊姛鑳?
+        // 注释
         let originalEarthquakeData = [];
 
         function setFilterMessage(message, type = 'info') {
@@ -1007,7 +1006,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 return;
             }
 
-            // 浠嶢PI閲嶆柊鍔犺浇鎸囧畾鏉′欢鐨勬暟鎹?
             loadEarthquakesWithFilter(startDate, endDate, minMag, maxMag);
         }
 
@@ -1017,12 +1015,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         function runChinaDomainRegressionChecks() {
             const cases = [
-                // 閲嶇偣璇垽鍥炲綊鐐癸紙搴旀帓闄わ級
+                // 注释
                 { name: 'RyukyuSea', lat: 26.0, lng: 128.0, expected: false },
                 { name: 'PhilippineWest', lat: 14.0, lng: 119.0, expected: false },
                 { name: 'PalawanNW', lat: 10.0, lng: 118.0, expected: false },
                 { name: 'VietnamEast', lat: 15.0, lng: 112.0, expected: false },
-                // 姝ｅ悜瑕嗙洊鐐癸紙搴斿寘鍚級
+                // 注释
                 { name: 'Bohai', lat: 39.2, lng: 120.5, expected: true },
                 { name: 'EastChinaSeaCN', lat: 28.5, lng: 124.5, expected: true },
                 { name: 'SouthChinaSeaCN', lat: 9.8, lng: 113.2, expected: true },
@@ -1085,12 +1083,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         function resetFilter() {
             clearFilterMessage();
             
-            // 閲嶆柊鍔犺浇榛樿鏁版嵁
+            // 注释
             initializeFilterDates();
             originalFetchEarthquakes();
         }
 
-        // 绛夊緟DOM鍔犺浇瀹屾垚鍚庡啀缁戝畾浜嬩欢
+        // 注释
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, binding events');
             document.getElementById('filterApplyBtn').addEventListener('click', filterEarthquakes);
@@ -1105,13 +1103,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 });
             }
             
-            // 鍒濆鍖栨棩鏈熻緭鍏ユ涓洪粯璁ゅ€硷紙杩囧幓3骞达級
+            // 注释
             initializeFilterDates();
             runChinaDomainRegressionChecks();
             originalFetchEarthquakes();
         });
 
-        // 淇敼鍘熷鐨?fetchEarthquakes 鍑芥暟鏉ヤ繚瀛樺師濮嬫暟鎹?
+        // 注释
         const originalFetchEarthquakes = async function fetchEarthquakes() {
             const quakeListDiv = document.getElementById('quakeList');
             try {
@@ -1130,7 +1128,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             }
         };
 
-        // 鍒濆鍖栨棩鏈熻緭鍏ユ涓洪粯璁ゅ€硷紙杩囧幓3骞达級
+        // 注释
         function initializeFilterDates() {
             const endDate = new Date();
             const startDate = new Date();
@@ -1151,4 +1149,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         setInterval(originalFetchEarthquakes, 24 * 60 * 60 * 1000);
     
 window.showQuakeDetail = showQuakeDetail;
+
+
+
+
+
+
+
+
 
