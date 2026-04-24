@@ -1,0 +1,1154 @@
+﻿import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+                
+        // 瀛樺偍鍦伴渿鏁版嵁鐢ㄤ簬鏍囨敞
+        let currentEarthquakes = [];
+        
+        const container = document.getElementById('globeContainer');
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x010118);
+        scene.fog = new THREE.FogExp2(0x010118, 0.0008);
+        
+        const camera = new THREE.PerspectiveCamera(45, width/height, 0.1, 1000);
+        camera.position.set(0, 0, 3.2);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(width, height);
+        renderer.shadowMap.enabled = false;
+        container.appendChild(renderer.domElement);
+        
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.autoRotate = false;
+        controls.enableZoom = true;
+        controls.enablePan = false;
+        controls.rotateSpeed = 0.8;
+        controls.zoomSpeed = 0.8;
+        
+        // 鏄熺┖绮掑瓙
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 2000;
+        const starPositions = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount; i++) {
+            starPositions[i*3] = (Math.random() - 0.5) * 2000;
+            starPositions[i*3+1] = (Math.random() - 0.5) * 2000;
+            starPositions[i*3+2] = (Math.random() - 0.5) * 300 - 150;
+        }
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.35, transparent: true, opacity: 0.8 });
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+        
+        const textureLoader = new THREE.TextureLoader();
+        const earthMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
+        const earthSpecularMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_specular_2048.jpg');
+        const earthNormalMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_normal_2048.jpg');
+        const cloudMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_clouds_1024.png');
+        
+        const earthMat = new THREE.MeshPhongMaterial({ 
+            map: earthMap, 
+            specularMap: earthSpecularMap, 
+            specular: new THREE.Color(0x333333), 
+            shininess: 8,
+            normalMap: earthNormalMap
+        });
+        const earth = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 128), earthMat);
+        scene.add(earth);
+        
+        const cloudMat = new THREE.MeshPhongMaterial({ 
+            map: cloudMap, 
+            transparent: true, 
+            opacity: 0.12, 
+            blending: THREE.AdditiveBlending 
+        });
+        const clouds = new THREE.Mesh(new THREE.SphereGeometry(1.008, 128, 128), cloudMat);
+        scene.add(clouds);
+        
+        const ambientLight = new THREE.AmbientLight(0x111122, 0.8);
+        scene.add(ambientLight);
+        
+        const sunLight = new THREE.DirectionalLight(0xffeedd, 1.35);
+        sunLight.position.set(5, 3, 5);
+        sunLight.target = earth;
+        scene.add(sunLight);
+        
+        const backFillLight = new THREE.PointLight(0x4466aa, 2);
+        backFillLight.position.set(-2, -1, -2.5);
+        scene.add(backFillLight);
+        
+        const rimLight = new THREE.PointLight(0x88aaff, 0.5);
+        rimLight.position.set(1, 1.5, -2);
+        scene.add(rimLight);
+        
+        let quakeMarkers = null;
+        
+        function getMarkerSize(mag) {
+            const base = 0.014;
+            const scale = Math.pow(2, (mag - 5.5) / 2.2);
+            return Math.min(base * scale, 0.11);
+        }
+        
+        function latLonToVector3(lat, lon, radius = 1.001) {
+            const phi = (90 - lat) * Math.PI / 180;
+            const theta = -lon * Math.PI / 180;
+            const x = radius * Math.sin(phi) * Math.cos(theta);
+            const y = radius * Math.cos(phi);
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+            return new THREE.Vector3(x, y, z);
+        }
+        
+        function updateGlobeMarkers(earthquakes) {
+            if (quakeMarkers) {
+                scene.remove(quakeMarkers);
+                if (quakeMarkers.geometry) quakeMarkers.geometry.dispose();
+                if (quakeMarkers.material) quakeMarkers.material.dispose();
+            }
+            if (!earthquakes || earthquakes.length === 0) return;
+            
+            const validQuakes = earthquakes.filter(q => {
+                const coords = q.geometry.coordinates;
+                return coords && !isNaN(coords[0]) && !isNaN(coords[1]);
+            });
+            if (validQuakes.length === 0) return;
+            
+            const group = new THREE.Group();
+            validQuakes.forEach(quake => {
+                const coords = quake.geometry.coordinates;
+                const lon = coords[0];
+                const lat = coords[1];
+                const mag = quake.properties.mag;
+                const size = getMarkerSize(mag);
+                const position = latLonToVector3(lat, lon, 1.002);
+                
+                const material = new THREE.MeshStandardMaterial({
+                    color: 0xff4444,
+                    emissive: 0x331100,
+                    emissiveIntensity: 0.2,
+                    roughness: 0.3,
+                    metalness: 0.05
+                });
+                const sphere = new THREE.Mesh(new THREE.SphereGeometry(size, 18, 18), material);
+                sphere.position.copy(position);
+                group.add(sphere);
+            });
+            quakeMarkers = group;
+            scene.add(quakeMarkers);
+        }
+        
+        window.updateGlobeMarkers = updateGlobeMarkers;
+        
+        // ---------- 杈呭姪锛氱粡绾害鏍煎紡鍖?(鍗楀寳绾?/ 涓滆タ缁? ----------
+        function formatLatLon(lat, lon) {
+            const latAbs = Math.abs(lat).toFixed(1);
+            const latDir = lat >= 0 ? 'N' : 'S';
+            const lonAbs = Math.abs(lon).toFixed(1);
+            const lonDir = lon >= 0 ? 'W' : 'E';
+            return `${latAbs}掳${latDir} , ${lonAbs}掳${lonDir}`;
+        }
+        
+        // 鑾峰彇澶槼鐩村皠鐐圭粡绾害 (杩斿洖鏁板€?
+        function getSubSolarPointLatLon() {
+            const now = new Date();
+            const utcHours = now.getUTCHours();
+            const utcMinutes = now.getUTCMinutes();
+            const utcSeconds = now.getUTCSeconds();
+            const dayOfYear = Math.floor((now.getTime() - new Date(Date.UTC(now.getUTCFullYear(), 0, 1, 0, 0, 0)).getTime()) / (24 * 3600 * 1000)) + 1;
+            const deltaDeg = -23.439 * Math.cos(2 * Math.PI / 365.25 * (dayOfYear + 10));
+            const utcDecimal = utcHours + utcMinutes/60 + utcSeconds/3600;
+            let lonDeg = (utcDecimal - 12) * 15;
+            if (lonDeg > 180) lonDeg -= 360;
+            if (lonDeg < -180) lonDeg += 360;
+            return { lat: deltaDeg, lon: lonDeg };
+        }
+        
+        // 璁＄畻澶槼鏂瑰悜鍚戦噺 (鐢ㄤ簬鍏夌収)
+        function getSolarDirectionVector() {
+            const now = new Date();
+            const utcYear = now.getUTCFullYear();
+            const utcMonth = now.getUTCMonth();
+            const utcDate = now.getUTCDate();
+            const utcHours = now.getUTCHours();
+            const utcMinutes = now.getUTCMinutes();
+            const utcSeconds = now.getUTCSeconds();
+            
+            const startOfYear = new Date(Date.UTC(utcYear, 0, 1, 0, 0, 0));
+            const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 3600 * 1000)) + 1;
+            
+            const obliquityDeg = 23.439;
+            const rad = Math.PI / 180;
+            const deltaRad = -obliquityDeg * rad * Math.cos(2 * Math.PI / 365.25 * (dayOfYear + 10));
+            
+            const utcDecimalHour = utcHours + utcMinutes / 60 + utcSeconds / 3600;
+            let subSolarLonDeg = (12 - utcDecimalHour) * -15;
+            if (subSolarLonDeg > 180) subSolarLonDeg -= 360;
+            if (subSolarLonDeg < -180) subSolarLonDeg += 360;
+            const subSolarLonRad = subSolarLonDeg * rad;
+            const subSolarLatRad = deltaRad;
+            
+            const cosLat = Math.cos(subSolarLatRad);
+            const x = cosLat * Math.cos(subSolarLonRad);
+            const y = Math.sin(subSolarLatRad);
+            const z = cosLat * Math.sin(subSolarLonRad);
+            
+            return new THREE.Vector3(x, y, z).normalize();
+        }
+        
+        let lastUpdateSecond = -1;
+        function updateRealTimeSunlight() {
+            const now = new Date();
+            const currentSec = Math.floor(now.getTime() / 1000);
+            if (currentSec === lastUpdateSecond) return;
+            lastUpdateSecond = currentSec;
+            
+            const sunDir = getSolarDirectionVector();
+            const distance = 8.5;
+            const lightPos = sunDir.clone().multiplyScalar(distance);
+            sunLight.position.copy(lightPos);
+            sunLight.target = earth;
+            sunLight.updateMatrixWorld();
+            
+            const sunY = sunDir.y;
+            let ambientIntensity = 0.55;
+            let backFillIntensity = 0.45;
+            let rimIntensity = 0.4;
+            if (sunY < -0.2) {
+                ambientIntensity = 0.75;
+                backFillIntensity = 0.8;
+                rimIntensity = 0.65;
+            } else if (sunY < 0.2) {
+                ambientIntensity = 0.5;
+                backFillIntensity = 0.42;
+                rimIntensity = 0.38;
+            } else {
+                ambientIntensity = 0.55;
+                backFillIntensity = 0.45;
+                rimIntensity = 0.4;
+            }
+            ambientLight.intensity = ambientIntensity;
+            backFillLight.intensity = backFillIntensity;
+            rimLight.intensity = rimIntensity;
+            
+            const intensityBase = 1.3;
+            const sunHeightFactor = Math.max(0.2, Math.min(1.2, (sunY + 0.5) * 0.9 + 0.6));
+            sunLight.intensity = intensityBase * sunHeightFactor;
+            
+            // 鏇存柊tip锛屼娇鐢ㄥ崡鍖楃含/涓滆タ缁忔牸寮?
+            const subPoint = getSubSolarPointLatLon();
+            const tipDiv = document.getElementById('sunPosTip');
+            if (tipDiv) {
+                tipDiv.innerHTML = `鈽€锔?瀹炴椂鏃ョ収 | 鐩村皠鐐? ${formatLatLon(subPoint.lat, subPoint.lon)}<br>馃晵 鍩轰簬UTC鏃堕棿`;
+            }
+        }
+        // 鏇存柊鏃堕棿鏄剧ず (涔熶娇鐢ㄥ崡鍖楃含/涓滆タ缁?
+        function updateUITime() {
+            const now = new Date();
+            const utcStr = now.toUTCString();
+            const sub = getSubSolarPointLatLon();
+            const el = document.getElementById('realTimeDisplay');
+            if (el) {
+                el.innerHTML = `馃晵 ${utcStr} | 鈽€锔?澶槼鐩村皠: ${formatLatLon(sub.lat, sub.lon)}`;
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            updateRealTimeSunlight();
+            updateUITime();
+            
+            clouds.rotation.y += 0.0008;
+            stars.rotation.y += 0.00015;
+            stars.rotation.x += 0.00005;
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+        
+        window.addEventListener('resize', () => {
+            const newW = container.clientWidth, newH = container.clientHeight;
+            camera.aspect = newW / newH;
+            camera.updateProjectionMatrix();
+            renderer.setSize(newW, newH);
+        });
+        
+        setTimeout(() => {
+            updateRealTimeSunlight();
+            updateUITime();
+        }, 100);
+        
+        window.updateGlobeMarkers = updateGlobeMarkers;
+    
+
+        // 澧ㄥ崱鎵樺湴鍥剧浉鍏冲彉閲?
+        let mercatorSvg = null;
+        let currentProjection = null;
+        let worldDataCache = null;
+        
+        (function() {
+            const container = document.getElementById('mercatorContainer');
+            let width = container.clientWidth, height = container.clientHeight;
+            mercatorSvg = d3.select("#mercatorContainer").append("svg").attr("width", width).attr("height", height).style("background", "#d9e9ff");
+            
+            function drawBaseMap() {
+                width = container.clientWidth; height = container.clientHeight;
+                mercatorSvg.attr("width", width).attr("height", height);
+                currentProjection = d3.geoMercator().scale((width / 2 / Math.PI) * 0.85).translate([width/2, height/2]);
+                const path = d3.geoPath().projection(currentProjection);
+                
+                fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json')
+                    .then(res => res.json())
+                    .then(world => {
+                        worldDataCache = world;
+                        const countries = topojson.feature(world, world.objects.countries);
+                        mercatorSvg.selectAll(".country").remove();
+                        mercatorSvg.selectAll(".country-border").remove();
+                        mercatorSvg.selectAll(".graticule").remove();
+                        mercatorSvg.selectAll(".equator").remove();
+                        
+                        mercatorSvg.selectAll(".country").data(countries.features).enter().append("path")
+                            .attr("class", "country")
+                            .attr("d", path).attr("fill", "#b8d4e3").attr("stroke", "#6a8e9b").attr("stroke-width", 0.5);
+                        
+                        const graticule = d3.geoGraticule().step([15,15]);
+                        mercatorSvg.append("path").attr("class", "graticule").datum(graticule).attr("d", path).attr("fill", "none").attr("stroke", "#aaccdd").attr("stroke-width", 0.5).attr("stroke-dasharray", "3 3");
+                        const equator = { type: "LineString", coordinates: [[-180,0],[180,0]] };
+                        mercatorSvg.append("path").attr("class", "equator").datum(equator).attr("d", path).attr("fill", "none").attr("stroke", "#e34d4d").attr("stroke-width", 1.2);
+                        
+                        if (window.currentEarthquakeData && window.currentEarthquakeData.length > 0) {
+                            updateMercatorMarkers(window.currentEarthquakeData);
+                        }
+                    }).catch(() => {
+                        mercatorSvg.append("text")
+                            .attr("x", width / 2)
+                            .attr("y", height / 2)
+                            .attr("text-anchor", "middle")
+                            .text("地图加载失败，请检查网络连接")
+                            .attr("fill", "#555");
+                    });
+            }
+            
+            drawBaseMap();
+            window.addEventListener('resize', () => drawBaseMap());
+        })();
+        
+        function updateMercatorMarkers(earthquakes) {
+            if (!mercatorSvg || !currentProjection) return;
+            mercatorSvg.selectAll(".quake-marker").remove();
+            if (!earthquakes || earthquakes.length === 0) return;
+            
+            const projection = currentProjection;
+            const width = parseFloat(mercatorSvg.attr("width"));
+            const height = parseFloat(mercatorSvg.attr("height"));
+            
+            earthquakes.forEach(quake => {
+                const coords = quake.geometry.coordinates;
+                const lon = coords[0];
+                const lat = coords[1];
+                const mag = quake.properties.mag;
+                const screenCoords = projection([lon, lat]);
+                if (!screenCoords) return;
+                const x = screenCoords[0];
+                const y = screenCoords[1];
+                if (x < -50 || x > width + 50 || y < -50 || y > height + 50) return;
+                
+                const radius = Math.min(5 * Math.pow(1.65, mag - 5.5), 34);
+                const group = mercatorSvg.append("g").attr("class", "quake-marker");
+                group.append("circle")
+                    .attr("cx", x)
+                    .attr("cy", y)
+                    .attr("r", radius)
+                    .attr("fill", "#ff3333")
+                    .attr("stroke", "#ffffff")
+                    .attr("stroke-width", 0.8)
+                    .attr("opacity", 0.9);
+                if (mag >= 6) {
+                    group.append("text")
+                        .attr("x", x + radius + 3)
+                        .attr("y", y - 3)
+                        .attr("fill", "#ff8888")
+                        .attr("font-size", "9px")
+                        .attr("font-weight", "bold")
+                        .attr("stroke", "#fff")
+                        .attr("stroke-width", 0.3)
+                        .text(mag.toFixed(1));
+                }
+                group.append("title")
+                    .text(`${quake.properties.place}\n闇囩骇: M${mag.toFixed(1)}\n鏃堕棿: ${new Date(quake.properties.time).toLocaleString()}`);
+            });
+        }
+        
+        window.updateMercatorMarkers = updateMercatorMarkers;
+    
+
+        // 璁＄畻杩囧幓3骞寸殑鏃ユ湡鑼冨洿
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setFullYear(endDate.getFullYear() - 3);
+        
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 鍔ㄦ€佹瀯閫犲悗绔疉PI URL
+        function buildEarthquakeApiUrl(queryStartDate, queryEndDate, queryMinMag, queryMaxMag) {
+            const formattedStart = formatDate(new Date(queryStartDate));
+            const formattedEnd = formatDate(new Date(queryEndDate));
+            const minMag = Math.max(0, queryMinMag || 5.5); // 鏈€灏忓厑璁镐负0
+            const maxMag = Number.isFinite(queryMaxMag) ? queryMaxMag : '';
+            const params = new URLSearchParams({
+                start: formattedStart,
+                end: formattedEnd,
+                minMag: String(minMag)
+            });
+            if (maxMag !== '') params.set('maxMag', String(maxMag));
+            return `/api/earthquakes?${params.toString()}`;
+        }
+        
+        const apiUrl = buildEarthquakeApiUrl(startDate, endDate, 5.5, Infinity);
+        
+        window.currentEarthquakeData = [];
+        let currentSortState = { field: 'mag', order: 'desc' };
+        let currentListRenderVersion = 0;
+
+        function getSortValue(quake, field) {
+            if (field === 'time') return Number(quake?.properties?.time || 0);
+            return Number(quake?.properties?.mag || 0);
+        }
+
+        function sortEarthquakes(quakes, sortState = currentSortState) {
+            const list = [...(quakes || [])];
+            const { field, order } = sortState;
+            const factor = order === 'asc' ? 1 : -1;
+            list.sort((a, b) => (getSortValue(a, field) - getSortValue(b, field)) * factor);
+            return list;
+        }
+
+        function updateSortButtonActiveState() {
+            const buttons = document.querySelectorAll('.sort-btn[data-sort-field][data-sort-order]');
+            buttons.forEach(btn => {
+                const field = btn.getAttribute('data-sort-field');
+                const order = btn.getAttribute('data-sort-order');
+                const active = field === currentSortState.field && order === currentSortState.order;
+                btn.classList.toggle('active', active);
+            });
+        }
+
+        function applyCurrentView(extraMessage = '') {
+            const sorted = sortEarthquakes(originalEarthquakeData || []);
+            const finalDisplayData = getFinalDisplayEarthquakes(sorted);
+            displayEarthquakes({ features: finalDisplayData });
+            updateStats(finalDisplayData);
+            if (window.updateGlobeMarkers) window.updateGlobeMarkers(finalDisplayData);
+            if (window.updateMercatorMarkers) window.updateMercatorMarkers(finalDisplayData);
+
+            updateSortButtonActiveState();
+
+            if (extraMessage) {
+                setFilterMessage(`${extraMessage}锛堝綋鍓嶆樉绀?${finalDisplayData.length} 鏉★級`, 'info');
+            }
+        }
+
+        function setSort(field, order) {
+            currentSortState = { field, order };
+            applyCurrentView(`鎺掑簭宸插垏鎹細${field === 'mag' ? '闇囩骇' : '鏃堕棿'}${order === 'asc' ? '姝ｅ簭' : '閫嗗簭'}`);
+        }
+
+        function injectSortControlsIfNeeded() {
+            if (document.getElementById('quakeSortControls')) return;
+            const quakeListWrap = document.querySelector('.quake-list');
+            if (!quakeListWrap) return;
+
+            const sortWrap = document.createElement('div');
+            sortWrap.id = 'quakeSortControls';
+            sortWrap.className = 'quake-sort-controls';
+            sortWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 12px;';
+            sortWrap.innerHTML = `
+                <span style="font-size:13px;color:#555;">鎺掑簭锛?/span>
+                <button type="button" class="sort-btn" data-sort-field="mag" data-sort-order="desc">闇囩骇鈫?/button>
+                <button type="button" class="sort-btn" data-sort-field="mag" data-sort-order="asc">闇囩骇鈫?/button>
+                <button type="button" class="sort-btn" data-sort-field="time" data-sort-order="desc">鏃堕棿鈫?/button>
+                <button type="button" class="sort-btn" data-sort-field="time" data-sort-order="asc">鏃堕棿鈫?/button>
+            `;
+            quakeListWrap.parentNode.insertBefore(sortWrap, quakeListWrap);
+        }
+
+        function bindSortControls() {
+            injectSortControlsIfNeeded();
+            const wrap = document.getElementById('quakeSortControls');
+            if (!wrap) return;
+
+            if (!document.getElementById('quakeSortControlStyle')) {
+                const style = document.createElement('style');
+                style.id = 'quakeSortControlStyle';
+                style.textContent = `
+                    .sort-btn{border:1px solid rgba(0,0,0,.15);background:#fff;color:#333;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;line-height:1}
+                    .sort-btn:hover{background:#f6f7f9}
+                    .sort-btn.active{background:#1f6feb;color:#fff;border-color:#1f6feb}
+                `;
+                document.head.appendChild(style);
+            }
+
+            wrap.addEventListener('click', (e) => {
+                const btn = e.target.closest('.sort-btn[data-sort-field][data-sort-order]');
+                if (!btn) return;
+                setSort(btn.getAttribute('data-sort-field'), btn.getAttribute('data-sort-order'));
+            });
+            updateSortButtonActiveState();
+        }
+        
+        function getMagnitudeClass(mag) {
+            if (mag >= 7) return 'm-strong';
+            if (mag >= 6) return 'm-mid';
+            return 'm-light';
+        }
+        
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+        }
+        
+        function updateStats(quakes) {
+            if (!quakes || quakes.length === 0) {
+                document.getElementById('totalCount').textContent = '0';
+                document.getElementById('avgMagnitude').textContent = '-';
+                document.getElementById('maxMagnitude').textContent = '-';
+                return;
+            }
+            const total = quakes.length;
+            let sumMag = 0, maxMag = 0;
+            for (const q of quakes) {
+                const mag = q.properties.mag;
+                sumMag += mag;
+                if (mag > maxMag) maxMag = mag;
+            }
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('avgMagnitude').textContent = (sumMag / total).toFixed(1);
+            document.getElementById('maxMagnitude').textContent = maxMag.toFixed(1);
+        }
+
+        function getPlaceCacheKey(originalPlace, lat, lng) {
+            const roundedLat = Number(lat).toFixed(3);
+            const roundedLng = Number(lng).toFixed(3);
+            return `${originalPlace}__${roundedLat},${roundedLng}`;
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        
+        async function displayEarthquakes(data) {
+            let quakes = data.features;
+            const quakeListDiv = document.getElementById('quakeList');
+            const renderVersion = ++currentListRenderVersion;
+            if (!quakes || quakes.length === 0) {
+                const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
+                quakeListDiv.innerHTML = domesticOnlyEnabled
+                    ? '<tr><td colspan="4" style="text-align: center; padding: 40px;">馃摥 绛涢€夊悗鏆傛棤鍥藉唴鍦伴渿鏁版嵁</td></tr>'
+                    : '<tr><td colspan="4" style="text-align: center; padding: 40px;">馃摥 鏆傛棤鍦伴渿鏁版嵁</td></tr>';
+                return;
+            }
+            
+            // 鏇存柊鍏ㄥ眬鏁版嵁锛岀‘淇濈偣鍑绘椂绱㈠紩鍖归厤
+            window.currentEarthquakeData = quakes;
+            const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
+            
+            // 鍏堟樉绀哄師濮嬭嫳鏂囧湴鍚?
+            let html = '';
+            for (let i = 0; i < quakes.length; i++) {
+                const quake = quakes[i];
+                const props = quake.properties;
+                const mag = props.mag;
+                const isMajor = mag >= 7;
+                const clickAttr = isMajor ? ` onclick="showQuakeDetail(${i})"` : '';
+                const classAttr = isMajor ? ' class="quake-item-major"' : '';
+                const placeText = props.place || '鏈煡鍦扮偣';
+                const placeEsc = escapeHtml(placeText);
+                const placeKey = getPlaceCacheKey(placeText, quake.geometry.coordinates[1], quake.geometry.coordinates[0]);
+                const placeKeyEsc = escapeHtml(placeKey);
+                html += `
+                    <tr${classAttr}${clickAttr} data-quake-index="${i}">
+                        <td><span class="magnitude ${getMagnitudeClass(mag)}">M${mag.toFixed(1)}${isMajor ? ' ⭐' : ''}</span></td>
+                        <td class="place" data-orig-place="${placeEsc}" data-place-key="${placeKeyEsc}" data-lat="${quake.geometry.coordinates[1]}" data-lng="${quake.geometry.coordinates[0]}">📍 ${placeEsc}</td>
+                        <td>🕒 ${formatTime(props.time)}</td>
+                        <td><span class="tsunami ${props.tsunami === 1 ? 'tsunami-yes' : 'tsunami-no'}">${props.tsunami === 1 ? '⚠️ 有' : '无'}</span></td>
+                    </tr>
+                `;
+            }
+            quakeListDiv.innerHTML = html;
+            
+            // 缈昏瘧鍥藉唴鍦伴渿鍦扮偣鍚嶏紙闈為樆濉烇級
+            try {
+                if (domesticOnlyEnabled) translateVisiblePlacesWithAmap(renderVersion);
+            } catch (e) { console.warn('translateVisiblePlacesWithAmap error', e); }
+        }
+
+        // 缈昏瘧鐩稿叧宸ュ叿涓庣紦瀛?
+        const PLACE_TRANSLATION_CACHE_KEY = 'placeTranslations_v2';
+
+        const TRANSLATE_API_URL = '/api/translate';
+
+        // 涓浗杈圭晫鏈湴鍑犱綍鍒ゆ柇锛圢atural Earth 1:10m 鎻愬彇骞剁畝鍖栵紝鍧愭爣椤哄簭锛歔lng, lat]锛?
+        // 绛涢€夋祦绋嬶細鍏堢矖绛?-> 鍐嶅杈瑰舰绮剧瓫锛堥檰鍦版垨娴峰煙锛?
+        const CHINA_FILTER_BBOX = {
+            minLng: 70.0,
+            maxLng: 135.0,
+            minLat: 3.0,
+            maxLat: 54.0
+        };
+
+        const CHINA_BOUNDARY_POLYGONS = [
+            // CHN mainland
+            [[78.917694, 33.386258], [78.721117, 33.994386], [78.976192, 34.309173], [78.296027, 34.624658], [78.044259, 35.491633], [76.166027, 35.806239], [75.849768, 36.644741], [74.38257, 37.126572], [75.164125, 37.400638], [74.891893, 37.599205], [74.835773, 38.455173], [73.816403, 38.586586], [73.632642, 39.448343], [73.976704, 40.043603], [74.835359, 40.511637], [75.559863, 40.63287], [75.681819, 40.291702], [76.313512, 40.343327], [76.860972, 41.013208], [78.074955, 41.039512], [78.658278, 41.532453], [80.231206, 42.033689], [80.143769, 42.644762], [80.793445, 43.14946], [80.338899, 44.121494], [80.492275, 44.727969], [79.858205, 44.90372], [81.665227, 45.347982], [82.539747, 45.123655], [82.631989, 45.415834], [82.291493, 45.533191], [83.021475, 47.205905], [84.739613, 46.814766], [85.498636, 47.051832], [85.718674, 48.358832], [86.565083, 48.527323], [86.859483, 49.105324], [87.816324, 49.165837], [87.983032, 48.552335], [90.3448, 47.658642], [91.047496, 46.566409], [90.651138, 45.493142], [90.873243, 45.186184], [93.525278, 44.951263], [95.397722, 44.280502], [95.318967, 44.017108], [96.357767, 42.724499], [101.524945, 42.537456], [102.034164, 42.18461], [104.97383, 41.586145], [106.767829, 42.286619], [110.406728, 42.768605], [111.933353, 43.696636], [111.397055, 44.387369], [111.958261, 45.084536], [113.604776, 44.739699], [114.533711, 45.3855], [115.667389, 45.454281], [116.568316, 46.290871], [117.393795, 46.57137], [119.85442, 46.65966], [119.699959, 47.159526], [118.542252, 47.966246], [115.914506, 47.683912], [115.51422, 48.131637], [116.684278, 49.823265], [117.836869, 49.50902], [119.31621, 50.092654], [119.137565, 50.392532], [120.77917, 52.117595], [120.72398, 52.542169], [120.032962, 52.760657], [120.874255, 53.28016], [123.614294, 53.563347], [125.621355, 53.062137], [126.555975, 52.130643], [127.590641, 50.208719], [127.538654, 49.789934], [130.674328, 48.870817], [130.674742, 48.063941], [131.023351, 47.682284], [132.524655, 47.707528], [133.091958, 48.10678], [134.718733, 48.263412], [134.772579, 47.710732], [134.183571, 47.3275], [133.902452, 46.258986], [133.09878, 45.10779], [131.853068, 45.337596], [130.933434, 44.841708], [131.280906, 43.380221], [131.103036, 42.910431], [130.407161, 42.735377], [130.530771, 42.53048], [129.879751, 42.996033], [129.703328, 42.442372], [128.034593, 41.993743], [128.14611, 41.376339], [126.679482, 41.735981], [126.007843, 40.899313], [124.137218, 39.842353], [123.252045, 39.817084], [121.179535, 38.720933], [121.117931, 38.943427], [121.942963, 39.399359], [121.223399, 39.528632], [122.30185, 40.502346], [121.867931, 40.995795], [120.981944, 40.826809], [118.926036, 39.130601], [117.715424, 39.111396], [117.716082, 38.378511], [118.950037, 38.097262], [119.259597, 37.715847], [118.969981, 37.593451], [119.145518, 37.17886], [119.7706, 37.151842], [120.738048, 37.83397], [121.570323, 37.428656], [122.688243, 37.409817], [122.507416, 36.898017], [120.75058, 36.616848], [120.949962, 36.459174], [120.627778, 36.116523], [120.097179, 36.226386], [120.298839, 35.973131], [119.192882, 35.000434], [119.192231, 34.718207], [120.257091, 34.311835], [120.830333, 32.697659], [121.922057, 31.754378], [120.131358, 31.943183], [119.612885, 32.35456], [120.006396, 31.950305], [120.750354, 31.978336], [121.95082, 30.982081], [120.147094, 30.198891], [120.621606, 30.372563], [120.792247, 30.066067], [121.254102, 30.348393], [122.129143, 29.903777], [121.44337, 29.524237], [121.971202, 29.593329], [121.942963, 29.195868], [121.408539, 29.161119], [121.62143, 28.735907], [121.142345, 28.845852], [121.656342, 28.339301], [121.345795, 28.145168], [121.168956, 28.384833], [120.965228, 27.987145], [120.559581, 28.112779], [120.868364, 27.882559], [120.517833, 27.201606], [120.195811, 27.297797], [120.421723, 27.146959], [120.031993, 26.899888], [120.134369, 26.646064], [119.552094, 26.749091], [119.681895, 26.317125], [119.949962, 26.364936], [119.458507, 25.982489], [119.093516, 26.145819], [119.695404, 26.002631], [119.449067, 25.687161], [119.654552, 25.35814], [119.305186, 25.60456], [119.10255, 25.420315], [119.344249, 25.242377], [118.87558, 25.243842], [119.01767, 24.960273], [118.572032, 24.885199], [118.620453, 24.545478], [117.79127, 24.467475], [118.126475, 24.26203], [117.591669, 23.737064], [117.416596, 23.946845], [117.257093, 23.615616], [116.523204, 23.418524], [116.804822, 23.236122], [116.508881, 23.234117], [116.494688, 22.939352], [113.890345, 22.452712], [113.528819, 23.01081], [113.830089, 23.117499], [113.417491, 23.096991], [113.212983, 22.904527], [113.59917, 22.57518], [113.483745, 22.155142], [113.165294, 22.575588], [113.401971, 22.179574], [112.911586, 21.856291], [112.550873, 21.772854], [112.397472, 22.068508], [112.286225, 21.708808], [111.890391, 21.925116], [111.630463, 21.529853], [110.431163, 21.191474], [110.35849, 21.435736], [110.156749, 20.848863], [110.53419, 20.478258], [110.280284, 20.252997], [109.917247, 20.239325], [109.661225, 20.927558], [109.944428, 21.493109], [109.594493, 21.746405], [109.138682, 21.401597], [108.573334, 21.951809], [108.470958, 21.561998], [107.348155, 21.599355], [106.653107, 21.968893], [106.526913, 22.43827], [106.789843, 22.797188], [105.853879, 22.90465], [105.312155, 23.36581], [103.959525, 22.507103], [103.646934, 22.799049], [103.029039, 22.430157], [102.467781, 22.768586], [102.218029, 22.410675], [101.689121, 22.478887], [101.75599, 21.143258], [101.244342, 21.192868], [101.082801, 21.766735], [100.162496, 21.436367], [99.942406, 22.045529], [99.14447, 22.153533], [99.538038, 22.926431], [98.859009, 23.179387], [98.658815, 23.961123], [98.865727, 24.145685], [97.516456, 23.942829], [97.800986, 25.237634], [98.690234, 25.865554], [98.679279, 27.577336], [98.294703, 27.536615], [97.670451, 28.511284], [97.323496, 28.217478], [96.301852, 28.420711], [96.592584, 28.757884], [96.195323, 28.941106], [96.366241, 29.257233], [96.141966, 29.368467], [95.367406, 29.036496], [94.599941, 29.316635], [92.683674, 27.91045], [91.952247, 27.72482], [90.225591, 28.358399], [89.561489, 28.13464], [88.971933, 27.312385], [88.610488, 28.105831], [87.369116, 27.803937], [86.15596, 28.156525], [85.98026, 27.885172], [85.692939, 28.335222], [85.087395, 28.304113], [85.160982, 28.595], [84.450845, 28.73388], [84.08973, 29.256613], [83.523718, 29.183594], [82.088767, 30.330088], [81.387518, 30.373909], [81.097768, 30.016929], [79.131397, 31.438433], [78.745095, 31.308116], [78.384807, 32.547549], [78.943429, 32.346373], [79.620673, 32.728725], [79.456096, 33.250399], [78.917694, 33.386258]],
+            // CHN Hainan
+            [[111.010509, 19.683783], [110.479177, 19.169257], [110.534434, 18.785631], [110.03419, 18.511949], [110.040294, 18.38227], [109.746104, 18.395901], [109.708751, 18.207221], [108.684906, 18.515204], [108.626964, 19.27497], [109.307384, 19.711127], [109.163341, 19.724799], [109.255138, 19.898342], [109.581716, 19.855699], [109.527029, 19.951361], [109.719005, 20.010647], [109.990082, 19.905951], [110.156993, 20.067369], [110.417735, 19.923407], [110.382986, 20.081041], [110.605805, 19.923163], [110.677908, 20.16356], [110.934581, 19.995063], [111.010509, 19.683783]],
+            // CHN nearshore island
+            [[121.844075, 31.607947], [121.986598, 31.503897], [121.817326, 31.44665], [121.176288, 31.784323], [121.322564, 31.829331], [121.844075, 31.607947]],
+            // TWN main island
+            [[121.905772, 24.9501], [121.400076, 23.145494], [120.948253, 22.526801], [120.840343, 21.904608], [120.714366, 21.937486], [120.621267, 22.295071], [120.055186, 23.043687], [120.184418, 23.76439], [121.059337, 25.050238], [121.580821, 25.283026], [121.905121, 25.106594], [121.905772, 24.9501]],
+            // TWN outlying island
+            [[118.394216, 24.522691], [118.463356, 24.431523], [118.283946, 24.401272], [118.282074, 24.477362], [118.381414, 24.473511], [118.394216, 24.522691]],
+            // HKG main
+            [[114.229828, 22.555813], [114.335134, 22.506415], [114.167491, 22.448065], [114.209321, 22.398668], [114.323741, 22.480048], [114.39975, 22.436143], [114.357595, 22.332424], [114.318614, 22.38939], [114.258393, 22.362087], [114.296723, 22.258287], [114.255544, 22.322333], [114.171886, 22.288723], [114.104828, 22.369859], [113.896983, 22.408759], [114.229828, 22.555813]],
+            // HKG island
+            [[113.846446, 22.197089], [113.892507, 22.292711], [114.054861, 22.33633], [114.000173, 22.216132], [113.846446, 22.197089]],
+            // MAC main
+            [[113.558604, 22.163031], [113.587494, 22.124864], [113.546804, 22.105373], [113.532237, 22.152615], [113.558604, 22.163031]],
+            // MAC reclaimed
+            [[113.536469, 22.217068], [113.55714, 22.20246], [113.52475, 22.173733], [113.536469, 22.217068]]
+        ];
+
+        // 娴峰煙绠€鍖栧洿鏍忥紙绮剧粏鍖栫増鏈級
+        // 璇存槑锛?
+        // - 鎸夋捣鍖烘媶鍒嗭細娓ゆ捣銆侀粍娴蜂腑鍥戒竴渚с€佷笢娴蜂腑鍥戒竴渚с€佸崡娴凤紙涔濇绾夸富寮犺寖鍥寸殑绠€鍖栧垎鍖猴級
+        // - 鍐嶅彔鍔犳帓闄ゅ尯锛氱悏鐞冦€佽彶寰嬪瑗块儴銆佽秺鍗楁部娴风瓑锛岄檷浣庤鍒?
+        const CHINA_SEA_POLYGONS = [
+            // 娓ゆ捣锛堝叏鍩燂級
+            [[117.2, 37.0], [122.8, 37.0], [122.8, 41.3], [117.2, 41.3], [117.2, 37.0]],
+            // 榛勬捣锛堜腑鍥戒竴渚э紝闈犺繎涓煩鍒嗙晫绾跨畝鍖栵級
+            [[118.6, 31.6], [121.6, 31.5], [124.1, 33.0], [124.8, 35.5], [124.8, 38.8], [123.6, 40.5], [121.2, 40.7], [119.3, 39.1], [118.7, 36.1], [118.6, 31.6]],
+            // 涓滄捣锛堜腑鍥戒竴渚э紝鑷冲啿缁虫捣妲介檮杩戠畝鍖栵級
+            [[120.8, 23.8], [123.2, 23.8], [125.6, 25.0], [126.4, 27.6], [126.0, 30.2], [124.2, 31.8], [121.3, 30.8], [120.7, 27.4], [120.8, 23.8]],
+            // 鍗楁捣 - 瑗挎矙鍛ㄨ竟锛堜節娈电嚎鍐呯畝鍖栵級
+            [[111.2, 18.3], [114.6, 18.0], [114.8, 15.8], [112.6, 15.1], [111.3, 16.1], [111.2, 18.3]],
+            // 鍗楁捣 - 涓矙鍛ㄨ竟锛堜節娈电嚎鍐呯畝鍖栵級
+            [[115.0, 17.5], [118.4, 17.2], [118.8, 15.0], [116.0, 14.2], [115.0, 17.5]],
+            // 鍗楁捣 - 鍗楁矙瑗夸腑閮紙涔濇绾垮唴绠€鍖栵級
+            [[110.5, 12.8], [116.8, 12.5], [117.2, 8.0], [113.8, 5.0], [110.0, 6.2], [109.6, 9.5], [110.5, 12.8]]
+        ];
+
+        // 娴峰煙璇垽鎺掗櫎鍖猴紙浼樺厛澶勭悊鐞夌悆銆佽彶寰嬪瑗夸晶銆佽秺鍗楄繎娴凤級
+        const CHINA_SEA_EXCLUSION_POLYGONS = [
+            // 鐞夌悆缇ゅ矝杩戞捣锛堢ず渚嬶細26N,128E 搴旀帓闄わ級
+            [[126.3, 24.0], [131.5, 24.0], [131.5, 29.2], [126.3, 29.2], [126.3, 24.0]],
+            // 鑿插緥瀹捐タ閮ㄦ捣鍩燂紙绀轰緥锛?4N,119E / 10N,118E 搴旀帓闄わ級
+            [[117.2, 7.8], [121.8, 7.8], [121.8, 16.8], [117.2, 16.8], [117.2, 7.8]],
+            // 瓒婂崡涓滈儴娌挎捣娴峰煙锛堢ず渚嬶細15N,112E 搴旀帓闄わ級
+            [[108.2, 9.0], [113.8, 9.0], [113.8, 18.6], [108.2, 18.6], [108.2, 9.0]]
+        ];
+
+        function buildPolygonBBoxes(polygons) {
+            return polygons.map(polygon => {
+                let minLng = Infinity;
+                let maxLng = -Infinity;
+                let minLat = Infinity;
+                let maxLat = -Infinity;
+                for (const [lng, lat] of polygon) {
+                    if (lng < minLng) minLng = lng;
+                    if (lng > maxLng) maxLng = lng;
+                    if (lat < minLat) minLat = lat;
+                    if (lat > maxLat) maxLat = lat;
+                }
+                return { minLng, maxLng, minLat, maxLat };
+            });
+        }
+
+        const CHINA_LAND_POLYGON_BBOXES = buildPolygonBBoxes(CHINA_BOUNDARY_POLYGONS);
+        const CHINA_SEA_POLYGON_BBOXES = buildPolygonBBoxes(CHINA_SEA_POLYGONS);
+        const CHINA_SEA_EXCLUSION_BBOXES = buildPolygonBBoxes(CHINA_SEA_EXCLUSION_POLYGONS);
+
+        function isPointInAnyPolygons(lng, lat, polygons, polygonBBoxes) {
+            for (let i = 0; i < polygons.length; i++) {
+                const box = polygonBBoxes[i];
+                if (
+                    lng < box.minLng || lng > box.maxLng ||
+                    lat < box.minLat || lat > box.maxLat
+                ) {
+                    continue;
+                }
+                if (pointInPolygon(lng, lat, polygons[i])) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function isPointOnSegment(px, py, x1, y1, x2, y2, epsilon = 1e-9) {
+            const cross = (px - x1) * (y2 - y1) - (py - y1) * (x2 - x1);
+            if (Math.abs(cross) > epsilon) return false;
+            const dot = (px - x1) * (px - x2) + (py - y1) * (py - y2);
+            return dot <= epsilon;
+        }
+
+        function pointInPolygon(lng, lat, polygon) {
+            let inside = false;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                const [xi, yi] = polygon[i];
+                const [xj, yj] = polygon[j];
+
+                if (isPointOnSegment(lng, lat, xi, yi, xj, yj)) return true;
+
+                const intersects = ((yi > lat) !== (yj > lat))
+                    && (lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi);
+                if (intersects) inside = !inside;
+            }
+            return inside;
+        }
+
+        function isInChinaDomain(lng, lat) {
+            if (!Number.isFinite(lng) || !Number.isFinite(lat)) return false;
+
+            // 1) 鐭╁舰绮楃瓫
+            if (
+                lng < CHINA_FILTER_BBOX.minLng ||
+                lng > CHINA_FILTER_BBOX.maxLng ||
+                lat < CHINA_FILTER_BBOX.minLat ||
+                lat > CHINA_FILTER_BBOX.maxLat
+            ) {
+                return false;
+            }
+
+            // 2) 澶氳竟褰㈢簿绛涳細闄嗗湴鍛戒腑鍗冲浗鍐?
+            const inLand = isPointInAnyPolygons(lng, lat, CHINA_BOUNDARY_POLYGONS, CHINA_LAND_POLYGON_BBOXES);
+            if (inLand) return true;
+
+            // 3) 娴峰煙锛氬厛鍛戒腑娴峰煙锛屽啀鎺掗櫎楂樿鍒ゅ尯鍩?
+            const inSea = isPointInAnyPolygons(lng, lat, CHINA_SEA_POLYGONS, CHINA_SEA_POLYGON_BBOXES);
+            if (!inSea) return false;
+
+            const inSeaExclusion = isPointInAnyPolygons(lng, lat, CHINA_SEA_EXCLUSION_POLYGONS, CHINA_SEA_EXCLUSION_BBOXES);
+            return !inSeaExclusion;
+        }
+
+        // 鍏煎宸叉湁璋冪敤
+        function isInChinaBoundary(lng, lat) {
+            return isInChinaDomain(lng, lat);
+        }
+
+        function loadTranslationCache() {
+            try {
+                const raw = localStorage.getItem(PLACE_TRANSLATION_CACHE_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) { return {}; }
+        }
+
+        function saveTranslationCache(cache) {
+            try { localStorage.setItem(PLACE_TRANSLATION_CACHE_KEY, JSON.stringify(cache)); } catch (e) { }
+        }
+
+        function containsChinese(text) {
+            return /[\u4e00-\u9fff]/.test(text);
+        }
+
+        // 妫€鏌ュ湴闇囨槸鍚﹀湪涓浗鍩熷唴锛堥檰鍦?棰嗘捣/绠¤緰娴峰煙锛? 鏈湴鍒ゆ柇锛屾棤闇€缃戠粶
+        function isChinaDomesticEarthquake(lat, lng) {
+            const isDomestic = isInChinaBoundary(lng, lat);
+            console.log(`[isChinaDomesticEarthquake] local check lat=${lat}, lng=${lng}, isDomestic=${isDomestic}`);
+            return isDomestic;
+        }
+
+        // 鎵归噺杩囨护鍥藉唴鍦伴渿锛圤(N) 鏈湴璁＄畻锛?
+        function filterDomesticEarthquakes(quakes) {
+            return quakes.filter(quake => {
+                const lat = quake.geometry.coordinates[1];
+                const lng = quake.geometry.coordinates[0];
+                return isChinaDomesticEarthquake(lat, lng);
+            });
+        }
+
+        function getFinalDisplayEarthquakes(quakes) {
+            const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
+            return domesticOnlyEnabled ? filterDomesticEarthquakes(quakes) : quakes;
+        }
+
+        // 璋冪敤楂樺痉閫嗗湴鐞嗙紪鐮?API锛堣幏鍙栧潗鏍囩殑涓枃鍦板潃淇℃伅锛?
+        async function getAddressFromCoords(lat, lng, originalPlace) {
+            try {
+                const response = await fetch(TRANSLATE_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ lat, lng, originalPlace })
+                });
+                if (!response.ok) return null;
+                const data = await response.json();
+                return data?.translatedPlace || null;
+            } catch (e) {
+                console.warn(`[translate-api] error:`, e.message);
+                return null;
+            }
+        }
+
+        // 浠呭浗鍐呭湴闇囪皟鐢ㄥ悗绔炕璇戯紝鍏朵粬涓€寰嬫樉绀鸿嫳鏂?
+        async function translateLocationWithAmap(lat, lng, originalPlace) {
+            console.log(`[translateLocationWithAmap] start: lat=${lat}, lng=${lng}, orig="${originalPlace}"`);
+            
+            try {
+                if (!isInChinaBoundary(lng, lat)) {
+                    console.log(`[translateLocationWithAmap] local boundary says non-china, keep original`);
+                    return originalPlace;
+                }
+
+                const translated = await getAddressFromCoords(lat, lng, originalPlace);
+                console.log(`[translateLocationWithAmap] translate API result:`, translated);
+                if (translated && translated.trim()) {
+                    return translated.trim();
+                }
+            } catch (e) {
+                console.warn(`[translateLocationWithAmap] translate exception:`, e.message);
+            }
+
+            console.log(`[translateLocationWithAmap] non-china earthquake or translate failed, returning original: "${originalPlace}"`);
+            return originalPlace;
+        }
+
+                // 灏濊瘯楂樺痉閫嗗湴鐞嗙紪鐮?
+
+        async function translateVisiblePlacesWithAmap(renderVersion = currentListRenderVersion) {
+            const elems = Array.from(document.querySelectorAll('.place[data-orig-place][data-lat][data-lng]'));
+            console.log(`[translateList] starting with ${elems.length} elements, renderVersion=${renderVersion}`);
+            if (!elems.length) return;
+
+            const cache = loadTranslationCache();
+            const batchSize = 4;
+            let cacheDirty = false;
+
+            for (let i = 0; i < elems.length; i += batchSize) {
+                if (renderVersion !== currentListRenderVersion) {
+                    console.log('[translateList] stale render detected, stop translating current batch');
+                    return;
+                }
+
+                const batch = elems.slice(i, i + batchSize).map(async el => {
+                    try {
+                        const orig = (el.getAttribute('data-orig-place') || '').trim();
+                        const lat = parseFloat(el.getAttribute('data-lat'));
+                        const lng = parseFloat(el.getAttribute('data-lng'));
+                        const placeKey = el.getAttribute('data-place-key') || getPlaceCacheKey(orig, lat, lng);
+
+                        if (!orig || Number.isNaN(lat) || Number.isNaN(lng)) return;
+                        if (containsChinese(orig)) return;
+                        if (!isInChinaBoundary(lng, lat)) return;
+
+                        if (cache[placeKey]) {
+                            if (renderVersion === currentListRenderVersion) {
+                                el.textContent = `📍 ${cache[placeKey]}`;
+                            }
+                            return;
+                        }
+
+                        const translated = await translateLocationWithAmap(lat, lng, orig);
+                        const finalText = (translated || orig).trim();
+                        cache[placeKey] = finalText;
+                        cacheDirty = true;
+
+                        if (renderVersion === currentListRenderVersion) {
+                            el.textContent = `📍 ${finalText}`;
+                        }
+                    } catch (e) {
+                        console.warn('[translateList] single item failed:', e?.message || e);
+                    }
+                });
+                await Promise.all(batch);
+            }
+
+            if (cacheDirty) saveTranslationCache(cache);
+            console.log('[translateList] translation batch complete');
+        }
+
+        async function translateVisiblePlaces() {
+            const elems = Array.from(document.querySelectorAll('.place[data-orig-place]'));
+            if (!elems.length) return;
+            const cache = loadTranslationCache();
+            const batchSize = 5;
+            for (let i = 0; i < elems.length; i += batchSize) {
+                const batch = elems.slice(i, i + batchSize).map(async el => {
+                    try {
+                        const orig = el.getAttribute('data-orig-place') || '';
+                        if (!orig) return;
+                        if (containsChinese(orig)) return;
+                        if (cache[orig]) {
+                            el.innerHTML = '馃搷 ' + cache[orig];
+                            return;
+                        }
+                        el.innerHTML = '?? ' + orig;
+                    } catch (e) { /* ignore per-item errors */ }
+                });
+                await Promise.all(batch);
+            }
+        }
+
+        // 显示地震详情弹窗
+        async function showQuakeDetail(index) {
+            const quake = window.currentEarthquakeData[index];
+            if (!quake) return;
+
+            const props = quake.properties || {};
+            const geometry = quake.geometry || {};
+            const coords = geometry.coordinates || [0, 0, 0];
+            const originalPlace = props.place || '未知地点';
+            const lat = Number(coords[1]);
+            const lng = Number(coords[0]);
+
+            let placeText = originalPlace;
+            try {
+                const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
+                if (domesticOnlyEnabled && originalPlace) {
+                    placeText = await translateLocationWithAmap(lat, lng, originalPlace);
+                }
+            } catch (e) {
+                console.warn('place translation failed', e);
+            }
+
+            document.getElementById('quakeDetailTitle').textContent = `M${Number(props.mag || 0).toFixed(1)} 级地震详情`;
+
+            const detailGrid = document.getElementById('quakeDetailGrid');
+            detailGrid.innerHTML = `
+                <div class="quake-detail-item"><div class="quake-detail-label">震级</div><div class="quake-detail-value">M${Number(props.mag || 0).toFixed(1)}</div></div>
+                <div class="quake-detail-item"><div class="quake-detail-label">位置</div><div class="quake-detail-value">${escapeHtml(placeText)}</div></div>
+                <div class="quake-detail-item"><div class="quake-detail-label">经度</div><div class="quake-detail-value">${Number(coords[0] || 0).toFixed(4)}°</div></div>
+                <div class="quake-detail-item"><div class="quake-detail-label">纬度</div><div class="quake-detail-value">${Number(coords[1] || 0).toFixed(4)}°</div></div>
+                <div class="quake-detail-item"><div class="quake-detail-label">深度</div><div class="quake-detail-value">${Number(coords[2] || 0).toFixed(1)} km</div></div>
+                <div class="quake-detail-item"><div class="quake-detail-label">时间</div><div class="quake-detail-value">${new Date(props.time).toLocaleString()}</div></div>
+                <div class="quake-detail-item"><div class="quake-detail-label">海啸风险</div><div class="quake-detail-value">${props.tsunami === 1 ? '⚠️ 有海啸风险' : '无海啸风险'}</div></div>
+                <div class="quake-detail-item"><div class="quake-detail-label">数据来源</div><div class="quake-detail-value">USGS</div></div>
+            `;
+
+            const descriptionDiv = document.getElementById('quakeDetailDescription');
+            const magValue = Number(props.mag || 0);
+            let magDesc = '本次地震震级较低，请关注当地后续余震信息。';
+            if (magValue >= 8.0) magDesc = '这是一次极强地震，可能造成大范围破坏，并可能引发海啸。';
+            else if (magValue >= 7.0) magDesc = '这是一次强震，可能造成较大破坏，请注意官方预警信息。';
+
+            descriptionDiv.innerHTML = `
+                <h4>📌 地震分析</h4>
+                <p>${magDesc}</p>
+                <h4>📍 地理位置</h4>
+                <p>震中位于 ${escapeHtml(placeText)}，坐标为 (${Number(coords[0] || 0).toFixed(4)}°E, ${Number(coords[1] || 0).toFixed(4)}°N)，震源深度约 ${Number(coords[2] || 0).toFixed(1)} km。</p>
+                <h4>🔔 数据来源</h4>
+                <p>数据来自 USGS（美国地质调查局）全球地震监测网络。</p>
+            `;
+
+            document.getElementById('quakeDetailModal').style.display = 'block';
+        }
+
+        // 鍏抽棴寮圭獥
+        function closeQuakeDetail() {
+            document.getElementById('quakeDetailModal').style.display = 'none';
+        }
+
+        // ESC閿叧闂脊绐楋紙鍏ㄥ眬缁戝畾锛?
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeQuakeDetail();
+            }
+        });
+
+        // 绛涢€夊姛鑳?
+        let originalEarthquakeData = [];
+
+        function setFilterMessage(message, type = 'info') {
+            const msgDiv = document.getElementById('filterMessage');
+            msgDiv.innerHTML = message;
+            msgDiv.className = `filter-message ${type}`;
+        }
+
+        function clearFilterMessage() {
+            document.getElementById('filterMessage').innerHTML = '';
+        }
+
+        function getFilterValues() {
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            const minMag = parseFloat(document.getElementById('filterMinMag').value) || 0;
+            const maxMag = parseFloat(document.getElementById('filterMaxMag').value) || Infinity;
+            return { startDate, endDate, minMag, maxMag };
+        }
+
+        function filterEarthquakes() {
+            console.log('filterEarthquakes called');
+            clearFilterMessage();
+            const { startDate, endDate, minMag, maxMag } = getFilterValues();
+            console.log('Filter values:', { startDate, endDate, minMag, maxMag });
+
+            if (!startDate || !endDate) {
+                setFilterMessage('❌ 请输入起始日期和结束日期', 'error');
+                return;
+            }
+
+            if (new Date(startDate) > new Date(endDate)) {
+                setFilterMessage('❌ 起始日期不能晚于结束日期', 'error');
+                return;
+            }
+
+            if (minMag > maxMag) {
+                setFilterMessage('❌ 最小震级不能大于最大震级', 'error');
+                return;
+            }
+
+            // 浠嶢PI閲嶆柊鍔犺浇鎸囧畾鏉′欢鐨勬暟鎹?
+            loadEarthquakesWithFilter(startDate, endDate, minMag, maxMag);
+        }
+
+        function rerenderByCurrentToggle() {
+            applyCurrentView('已更新国内地震筛选');
+        }
+
+        function runChinaDomainRegressionChecks() {
+            const cases = [
+                // 閲嶇偣璇垽鍥炲綊鐐癸紙搴旀帓闄わ級
+                { name: 'RyukyuSea', lat: 26.0, lng: 128.0, expected: false },
+                { name: 'PhilippineWest', lat: 14.0, lng: 119.0, expected: false },
+                { name: 'PalawanNW', lat: 10.0, lng: 118.0, expected: false },
+                { name: 'VietnamEast', lat: 15.0, lng: 112.0, expected: false },
+                // 姝ｅ悜瑕嗙洊鐐癸紙搴斿寘鍚級
+                { name: 'Bohai', lat: 39.2, lng: 120.5, expected: true },
+                { name: 'EastChinaSeaCN', lat: 28.5, lng: 124.5, expected: true },
+                { name: 'SouthChinaSeaCN', lat: 9.8, lng: 113.2, expected: true },
+                { name: 'Mainland', lat: 31.2, lng: 121.5, expected: true }
+            ];
+
+            const results = cases.map(item => {
+                const actual = isInChinaDomain(item.lng, item.lat);
+                return {
+                    case: item.name,
+                    lat: item.lat,
+                    lng: item.lng,
+                    expected: item.expected,
+                    actual,
+                    pass: actual === item.expected
+                };
+            });
+
+            const passCount = results.filter(r => r.pass).length;
+            console.group(`[china-domain-regression] ${passCount}/${results.length} passed`);
+            console.table(results);
+            if (passCount !== results.length) {
+                console.warn('[china-domain-regression] mismatch detected, please inspect sea polygons/exclusions.');
+            }
+            console.groupEnd();
+        }
+
+        async function loadEarthquakesWithFilter(queryStartDate, queryEndDate, queryMinMag, queryMaxMag) {
+            const quakeListDiv = document.getElementById('quakeList');
+            try {
+                quakeListDiv.innerHTML = `<div class="loading">🔄 正在加载数据（${queryStartDate} 至 ${queryEndDate}，最小震级 M${queryMinMag}）...</div>`;
+                
+                const newApiUrl = buildEarthquakeApiUrl(queryStartDate, queryEndDate, queryMinMag, queryMaxMag);
+                const response = await fetch(newApiUrl);
+                if (!response.ok) throw new Error('网络请求失败');
+                const data = await response.json();
+                const filtered = data.features || [];
+
+                if (filtered.length > 2000) {
+                    setFilterMessage(`❌ 符合条件的数据过多（${filtered.length} 条 > 2000 条），请缩小筛选范围`, 'error');
+                    quakeListDiv.innerHTML = '<div class="loading">📭 暂无数据</div>';
+                    return;
+                }
+
+                if (filtered.length === 0) {
+                    setFilterMessage('ℹ️ 没有符合条件的数据', 'info');
+                } else {
+                    setFilterMessage(`✅ 筛选成功，共 ${filtered.length} 条数据`, 'success');
+                }
+
+                originalEarthquakeData = [...filtered];
+                applyCurrentView();
+            } catch (error) {
+                quakeListDiv.innerHTML = `<div class="error">❌ 加载失败：${error.message}<br>请检查网络连接或筛选条件</div>`;
+                setFilterMessage(`❌ 加载失败：${error.message}`, 'error');
+                console.error('获取地震数据失败:', error);
+            }
+        }
+
+        function resetFilter() {
+            clearFilterMessage();
+            
+            // 閲嶆柊鍔犺浇榛樿鏁版嵁
+            initializeFilterDates();
+            originalFetchEarthquakes();
+        }
+
+        // 绛夊緟DOM鍔犺浇瀹屾垚鍚庡啀缁戝畾浜嬩欢
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, binding events');
+            document.getElementById('filterApplyBtn').addEventListener('click', filterEarthquakes);
+            document.getElementById('filterResetBtn').addEventListener('click', resetFilter);
+            document.getElementById('domesticOnlyToggle')?.addEventListener('change', rerenderByCurrentToggle);
+            bindSortControls();
+            document.getElementById('quakeDetailClose').addEventListener('click', closeQuakeDetail);
+            const modalEl = document.getElementById('quakeDetailModal');
+            if (modalEl) {
+                modalEl.addEventListener('click', function(e) {
+                    if (e.target === this) closeQuakeDetail();
+                });
+            }
+            
+            // 鍒濆鍖栨棩鏈熻緭鍏ユ涓洪粯璁ゅ€硷紙杩囧幓3骞达級
+            initializeFilterDates();
+            runChinaDomainRegressionChecks();
+            originalFetchEarthquakes();
+        });
+
+        // 淇敼鍘熷鐨?fetchEarthquakes 鍑芥暟鏉ヤ繚瀛樺師濮嬫暟鎹?
+        const originalFetchEarthquakes = async function fetchEarthquakes() {
+            const quakeListDiv = document.getElementById('quakeList');
+            try {
+                quakeListDiv.innerHTML = '<div class="loading">🔄 正在加载地震数据...</div>';
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('网络请求失败');
+                const data = await response.json();
+                originalEarthquakeData = data.features || [];
+                applyCurrentView();
+                const finalDisplayData = window.currentEarthquakeData || [];
+                clearFilterMessage();
+                setFilterMessage(`📊 已加载 ${finalDisplayData.length} 条地震数据`, 'info');
+            } catch (error) {
+                quakeListDiv.innerHTML = `<div class="error">❌ 加载失败：${error.message}<br>请检查网络连接</div>`;
+                console.error('获取地震数据失败:', error);
+            }
+        };
+
+        // 鍒濆鍖栨棩鏈熻緭鍏ユ涓洪粯璁ゅ€硷紙杩囧幓3骞达級
+        function initializeFilterDates() {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setFullYear(endDate.getFullYear() - 3);
+            
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            document.getElementById('filterStartDate').value = formatDate(startDate);
+            document.getElementById('filterEndDate').value = formatDate(endDate);
+            document.getElementById('filterMinMag').value = '5.5';
+        }
+
+        setInterval(originalFetchEarthquakes, 24 * 60 * 60 * 1000);
+    
+window.showQuakeDetail = showQuakeDetail;
+
