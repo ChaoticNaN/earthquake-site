@@ -23,11 +23,10 @@ function buildPrompt(quakeInfo = {}) {
     : 'Unknown time';
 
   return `Please write a Chinese popular-science interpretation for this earthquake.
-You must output exactly four sections and strictly follow the section titles and order below:
+You must output exactly three sections and strictly follow the section titles and order below:
 1) 基本概况：
 2) 科学解读：
 3) 地震破坏：
-4) 相关新闻报道：
 
 Earthquake data:
 - Magnitude: M${Number(mag).toFixed(1)}
@@ -39,15 +38,12 @@ Earthquake data:
 Output constraints:
 - Output in Chinese
 - Keep tone accurate, clear, and non-alarmist.
+- Output plain text only. Do not use any Markdown syntax, including **, *, #, backticks, or Markdown links.
+- Use normal line breaks only.
 - In “科学解读：”, you must include:
   a) regional geological background (plate boundary setting and fault type)
   b) a brief comparison with historical similar earthquakes in that region (magnitude/depth/damage level).
 - In “地震破坏：”, describe likely damage types and impact scope, e.g. building damage, ground fissures, landslides, tsunami and affected area range.
-- In “相关新闻报道：”, provide 2 real and verifiable reports when possible, each in this format:
-  新闻标题 | 媒体 | 日期(YYYY-MM-DD) | URL
-  新闻标题 | 媒体 | 日期(YYYY-MM-DD) | URL
-- Never fabricate sources. If you cannot verify real reports, write exactly:
-  暂无可核实的相关新闻报道
 - Do not stop mid-sentence. Please output complete content without truncation.`;
 }
 
