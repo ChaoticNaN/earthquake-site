@@ -1,6 +1,16 @@
 const express = require('express');
+const https = require('https');
 
 const router = express.Router();
+const fetchImpl =
+  typeof global.fetch === 'function'
+    ? global.fetch.bind(global)
+    : (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
+const fetchNode =
+  typeof global.fetch === 'function'
+    ? (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args))
+    : null;
 
 function toValidDateString(value, fallback) {
   if (!value) return fallback;
@@ -12,6 +22,35 @@ function toValidDateString(value, fallback) {
 function toNumber(value, fallback) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function getFetchErrorMessage(error) {
+  const base = error?.message || String(error);
+  const causeCode = error?.cause?.code || '';
+  if (causeCode) return `${base} (${causeCode})`;
+  return base;
+}
+
+async function fetchUsgs(url) {
+  const timeoutMs = 12000;
+  const controller = new AbortController();
+  const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetchImpl(url, {
+      signal: controller.signal
+    });
+  } catch (firstError) {
+    if (!fetchNode) throw firstError;
+
+    const agent = new https.Agent({ family: 4 });
+    return fetchNode(url, {
+      timeout: timeoutMs,
+      agent
+    });
+  } finally {
+    clearTimeout(timeoutHandle);
+  }
 }
 
 router.get('/', async (req, res) => {
@@ -31,10 +70,11 @@ router.get('/', async (req, res) => {
     usgsUrl.searchParams.set('endtime', end);
     usgsUrl.searchParams.set('minmagnitude', String(Math.max(0, minMag)));
 
-    const response = await fetch(usgsUrl.toString());
+    const response = await fetchUsgs(usgsUrl.toString());
     if (!response.ok) {
-      return res.status(response.status).json({
-        error: 'Failed to fetch data from USGS'
+      return res.status(502).json({
+        error: 'Failed to fetch data from USGS',
+        message: `USGS upstream status: ${response.status}`
       });
     }
 
@@ -49,9 +89,9 @@ router.get('/', async (req, res) => {
       features: filtered
     });
   } catch (error) {
-    return res.status(500).json({
-      error: 'Internal server error',
-      message: error.message
+    return res.status(502).json({
+      error: 'Upstream request failed',
+      message: getFetchErrorMessage(error)
     });
   }
 });

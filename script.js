@@ -680,6 +680,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         const PLACE_TRANSLATION_CACHE_KEY = 'placeTranslations_v2';
 
         const TRANSLATE_API_URL = '/api/translate';
+        const SUMMARY_API_URL = '/api/generate-summary';
 
         // 注释
         // 注释
@@ -982,6 +983,78 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             }
         }
 
+        async function fetchEarthquakeSummary(payload) {
+            const response = await fetch(SUMMARY_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await response.json();
+            const summaryText = (data?.summary || '').trim();
+            if (!summaryText) {
+                throw new Error('AI summary is empty');
+            }
+            return summaryText;
+        }
+
+        function sanitizeHttpUrl(url) {
+            const candidate = String(url || '').trim();
+            if (!candidate) return '';
+            try {
+                const parsed = new URL(candidate);
+                if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+                    return parsed.href;
+                }
+            } catch (e) {}
+            return '';
+        }
+
+        function renderSummaryLineWithLinks(lineText) {
+            const rawText = String(lineText || '');
+            const pattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"'）)\]]+)/g;
+            let html = '';
+            let lastIndex = 0;
+            let match = null;
+
+            while ((match = pattern.exec(rawText)) !== null) {
+                html += escapeHtml(rawText.slice(lastIndex, match.index));
+
+                if (match[2]) {
+                    const safeUrl = sanitizeHttpUrl(match[2]);
+                    const label = escapeHtml(match[1] || match[2]);
+                    html += safeUrl
+                        ? `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">${label}</a>`
+                        : label;
+                } else {
+                    const rawUrl = match[3];
+                    const safeUrl = sanitizeHttpUrl(rawUrl);
+                    const label = escapeHtml(rawUrl);
+                    html += safeUrl
+                        ? `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">${label}</a>`
+                        : label;
+                }
+
+                lastIndex = pattern.lastIndex;
+            }
+
+            html += escapeHtml(rawText.slice(lastIndex));
+            return html;
+        }
+
+        function renderAiSummary(summaryText) {
+            const normalized = String(summaryText || '').replace(/\r\n/g, '\n').trim();
+            if (!normalized) return '暂无解读内容';
+            return normalized
+                .split('\n')
+                .map(renderSummaryLineWithLinks)
+                .join('<br>');
+        }
+
         // 注释
         async function showQuakeDetail(index) {
             const quake = window.currentEarthquakeData[index];
@@ -1018,22 +1091,29 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 <div class="quake-detail-item"><div class="quake-detail-label">数据来源</div><div class="quake-detail-value">USGS</div></div>
             `;
 
-            const descriptionDiv = document.getElementById('quakeDetailDescription');
-            const magValue = Number(props.mag || 0);
-            let magDesc = '本次地震震级较低，请关注当地后续余震信息。';
-            if (magValue >= 8.0) magDesc = '这是一次极强地震，可能造成大范围破坏，并可能引发海啸。';
-            else if (magValue >= 7.0) magDesc = '这是一次强震，可能造成较大破坏，请注意官方预警信息。';
-
-            descriptionDiv.innerHTML = `
-                <h4>📌 地震分析</h4>
-                <p>${magDesc}</p>
-                <h4>📍 地理位置</h4>
-                <p>震中位于 ${escapeHtml(placeText)}，坐标为 (${Number(coords[0] || 0).toFixed(4)}°E, ${Number(coords[1] || 0).toFixed(4)}°N)，震源深度约 ${Number(coords[2] || 0).toFixed(1)} km。</p>
-                <h4>🔔 数据来源</h4>
-                <p>数据来自 USGS（美国地质调查局）全球地震监测网络。</p>
-            `;
-
             document.getElementById('quakeDetailModal').style.display = 'block';
+
+            const aiSummaryDiv = document.getElementById('aiSummaryContent');
+            if (aiSummaryDiv) aiSummaryDiv.textContent = '加载中...';
+
+            const quakeId = getQuakeStableKey(quake, index);
+            try {
+                const summary = await fetchEarthquakeSummary({
+                    id: quakeId,
+                    mag: Number(props.mag || 0),
+                    place: placeText || originalPlace || '未知地点',
+                    depth: Number(coords[2] || 0),
+                    time: Number(props.time || 0),
+                    lat: Number(coords[1] || 0),
+                    lng: Number(coords[0] || 0)
+                });
+                if (aiSummaryDiv) aiSummaryDiv.innerHTML = renderAiSummary(summary);
+            } catch (error) {
+                console.warn('[ai-summary] failed:', error?.message || error);
+                if (aiSummaryDiv) {
+                    aiSummaryDiv.textContent = 'AI 科普解读生成失败，请稍后重试。';
+                }
+            }
         }
 
         function closeQuakeDetail() {
@@ -1150,7 +1230,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 
                 const newApiUrl = buildEarthquakeApiUrl(queryStartDate, queryEndDate, queryMinMag, queryMaxMag);
                 const response = await fetch(newApiUrl);
-                if (!response.ok) throw new Error('网络请求失败');
+                if (!response.ok) {
+                    let errMsg = '网络请求失败';
+                    try {
+                        const errData = await response.json();
+                        if (errData?.message) errMsg = errData.message;
+                    } catch (e) {}
+                    throw new Error(errMsg);
+                }
                 const data = await response.json();
                 const filtered = data.features || [];
 
@@ -1209,7 +1296,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             try {
                 renderTableLoading('🔄 正在加载地震数据...');
                 const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error('网络请求失败');
+                if (!response.ok) {
+                    let errMsg = '网络请求失败';
+                    try {
+                        const errData = await response.json();
+                        if (errData?.message) errMsg = errData.message;
+                    } catch (e) {}
+                    throw new Error(errMsg);
+                }
                 const data = await response.json();
                 originalEarthquakeData = data.features || [];
                 applyCurrentView();

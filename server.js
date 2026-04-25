@@ -6,6 +6,7 @@ const path = require('path');
 
 const earthquakesRouter = require('./routes/earthquakes');
 const translateRouter = require('./routes/translate');
+const summaryRouter = require('./routes/summary');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +22,7 @@ app.use('/api', (req, res, next) => {
 
 app.use('/api/earthquakes', earthquakesRouter);
 app.use('/api/translate', translateRouter);
+app.use('/api/generate-summary', summaryRouter);
 
 // 静态文本资源显式声明 UTF-8
 app.use(
