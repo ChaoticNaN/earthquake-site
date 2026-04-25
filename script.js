@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 
         // 注释
         let currentEarthquakes = [];
+        let selectedQuakeKey = null;
         
         const container = document.getElementById('globeContainer');
         const width = container.clientWidth;
@@ -99,6 +100,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             const z = radius * Math.sin(phi) * Math.sin(theta);
             return new THREE.Vector3(x, y, z);
         }
+
+        function getQuakeStableKey(quake, fallbackIndex = 0) {
+            const eventId = quake?.id || quake?.properties?.code;
+            if (eventId) return String(eventId);
+            const coords = quake?.geometry?.coordinates || [0, 0, 0];
+            const time = Number(quake?.properties?.time || 0);
+            return `${Number(coords[0]).toFixed(3)}_${Number(coords[1]).toFixed(3)}_${time}_${fallbackIndex}`;
+        }
         
         function updateGlobeMarkers(earthquakes) {
             if (quakeMarkers) {
@@ -115,18 +124,20 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             if (validQuakes.length === 0) return;
             
             const group = new THREE.Group();
-            validQuakes.forEach(quake => {
+            validQuakes.forEach((quake, index) => {
                 const coords = quake.geometry.coordinates;
                 const lon = coords[0];
                 const lat = coords[1];
                 const mag = quake.properties.mag;
-                const size = getMarkerSize(mag);
+                const quakeKey = getQuakeStableKey(quake, index);
+                const isSelected = selectedQuakeKey && quakeKey === selectedQuakeKey;
+                const size = getMarkerSize(mag) * (isSelected ? 1.35 : 1);
                 const position = latLonToVector3(lat, lon, 1.002);
                 
                 const material = new THREE.MeshStandardMaterial({
-                    color: 0xff4444,
-                    emissive: 0x331100,
-                    emissiveIntensity: 0.2,
+                    color: isSelected ? 0xffd84a : 0xff4444,
+                    emissive: isSelected ? 0x6b5200 : 0x331100,
+                    emissiveIntensity: isSelected ? 0.55 : 0.2,
                     roughness: 0.3,
                     metalness: 0.05
                 });
@@ -343,26 +354,28 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             const width = parseFloat(mercatorSvg.attr("width"));
             const height = parseFloat(mercatorSvg.attr("height"));
             
-            earthquakes.forEach(quake => {
+            earthquakes.forEach((quake, index) => {
                 const coords = quake.geometry.coordinates;
                 const lon = coords[0];
                 const lat = coords[1];
                 const mag = quake.properties.mag;
+                const quakeKey = getQuakeStableKey(quake, index);
+                const isSelected = selectedQuakeKey && quakeKey === selectedQuakeKey;
                 const screenCoords = projection([lon, lat]);
                 if (!screenCoords) return;
                 const x = screenCoords[0];
                 const y = screenCoords[1];
                 if (x < -50 || x > width + 50 || y < -50 || y > height + 50) return;
                 
-                const radius = Math.min(5 * Math.pow(1.65, mag - 5.5), 34);
+                const radius = Math.min(5 * Math.pow(1.65, mag - 5.5), 34) * (isSelected ? 1.22 : 1);
                 const group = mercatorSvg.append("g").attr("class", "quake-marker");
                 group.append("circle")
                     .attr("cx", x)
                     .attr("cy", y)
                     .attr("r", radius)
-                    .attr("fill", "#ff3333")
-                    .attr("stroke", "#ffffff")
-                    .attr("stroke-width", 0.8)
+                    .attr("fill", isSelected ? "#facc15" : "#ff3333")
+                    .attr("stroke", isSelected ? "#7c4a00" : "#ffffff")
+                    .attr("stroke-width", isSelected ? 1.4 : 0.8)
                     .attr("opacity", 0.9);
                 if (mag >= 6) {
                     group.append("text")
@@ -415,6 +428,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         window.currentEarthquakeData = [];
         let currentSortState = { field: 'mag', order: 'desc' };
         let currentListRenderVersion = 0;
+        let lastFilterParams = null;
+        const TABLE_COLSPAN = 5;
 
         function getSortValue(quake, field) {
             if (field === 'time') return Number(quake?.properties?.time || 0);
@@ -436,6 +451,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 const order = btn.getAttribute('data-sort-order');
                 const active = field === currentSortState.field && order === currentSortState.order;
                 btn.classList.toggle('active', active);
+                btn.setAttribute('aria-pressed', active ? 'true' : 'false');
             });
         }
 
@@ -459,40 +475,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             applyCurrentView(`排序已切换：${field === 'mag' ? '震级' : '时间'}${order === 'asc' ? '正序' : '逆序'}`);
         }
 
-        function injectSortControlsIfNeeded() {
-            if (document.getElementById('quakeSortControls')) return;
-            const quakeListWrap = document.querySelector('.quake-list');
-            if (!quakeListWrap) return;
-
-            const sortWrap = document.createElement('div');
-            sortWrap.id = 'quakeSortControls';
-            sortWrap.className = 'quake-sort-controls';
-            sortWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 12px;';
-            sortWrap.innerHTML = `
-                <span style="font-size:13px;color:#555;">排序：</span>
-                <button type="button" class="sort-btn" data-sort-field="mag" data-sort-order="desc">震级↓</button>
-                <button type="button" class="sort-btn" data-sort-field="mag" data-sort-order="asc">震级↑</button>
-                <button type="button" class="sort-btn" data-sort-field="time" data-sort-order="desc">时间↓</button>
-                <button type="button" class="sort-btn" data-sort-field="time" data-sort-order="asc">时间↑</button>
-            `;
-            quakeListWrap.parentNode.insertBefore(sortWrap, quakeListWrap);
-        }
-
         function bindSortControls() {
-            injectSortControlsIfNeeded();
             const wrap = document.getElementById('quakeSortControls');
             if (!wrap) return;
-
-            if (!document.getElementById('quakeSortControlStyle')) {
-                const style = document.createElement('style');
-                style.id = 'quakeSortControlStyle';
-                style.textContent = `
-                    .sort-btn{border:1px solid rgba(0,0,0,.15);background:#fff;color:#333;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;line-height:1}
-                    .sort-btn:hover{background:#f6f7f9}
-                    .sort-btn.active{background:#1f6feb;color:#fff;border-color:#1f6feb}
-                `;
-                document.head.appendChild(style);
-            }
 
             wrap.addEventListener('click', (e) => {
                 const btn = e.target.closest('.sort-btn[data-sort-field][data-sort-order]');
@@ -502,15 +487,32 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             updateSortButtonActiveState();
         }
         
-        function getMagnitudeClass(mag) {
-            if (mag >= 7) return 'm-strong';
-            if (mag >= 6) return 'm-mid';
-            return 'm-light';
+        function getMagnitudeLevel(mag) {
+            if (mag >= 7) return 'mag-high';
+            if (mag >= 6) return 'mag-mid';
+            return 'mag-low';
         }
         
         function formatTime(timestamp) {
             const date = new Date(timestamp);
             return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+        }
+
+        function formatRelativeTime(timestamp) {
+            if (!timestamp) return '-';
+            const now = Date.now();
+            const diffMs = now - Number(timestamp);
+            const absMs = Math.abs(diffMs);
+            const minute = 60 * 1000;
+            const hour = 60 * minute;
+            const day = 24 * hour;
+            const suffix = diffMs >= 0 ? '前' : '后';
+
+            if (absMs < minute) return '刚刚';
+            if (absMs < hour) return `${Math.floor(absMs / minute)} 分钟${suffix}`;
+            if (absMs < day) return `${Math.floor(absMs / hour)} 小时${suffix}`;
+            if (absMs < 30 * day) return `${Math.floor(absMs / day)} 天${suffix}`;
+            return formatTime(timestamp);
         }
         
         function updateStats(quakes) {
@@ -546,7 +548,76 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
         }
-        
+
+        function renderTableSkeletonRow() {
+            return `
+                <tr class="skeleton-row">
+                    <td><div class="skeleton sm"></div></td>
+                    <td><div class="skeleton lg"></div></td>
+                    <td><div class="skeleton md"></div></td>
+                    <td><div class="skeleton xs"></div></td>
+                    <td><div class="skeleton xs"></div></td>
+                </tr>
+            `;
+        }
+
+        function renderTableLoading(text = '🔄 正在加载地震数据...') {
+            const quakeListDiv = document.getElementById('quakeList');
+            if (!quakeListDiv) return;
+            quakeListDiv.innerHTML = `
+                ${renderTableSkeletonRow()}
+                ${renderTableSkeletonRow()}
+                ${renderTableSkeletonRow()}
+                <tr><td class="table-state" colspan="${TABLE_COLSPAN}">${escapeHtml(text)}</td></tr>
+            `;
+        }
+
+        function renderTableError(message, retryHandlerName) {
+            const quakeListDiv = document.getElementById('quakeList');
+            if (!quakeListDiv) return;
+            quakeListDiv.innerHTML = `
+                <tr>
+                    <td class="table-state" colspan="${TABLE_COLSPAN}">
+                        ❌ ${escapeHtml(message)}
+                        <br>
+                        <button type="button" class="retry-btn" onclick="${retryHandlerName}()">重试</button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function buildMagnitudeChip(mag) {
+            const level = getMagnitudeLevel(mag);
+            return `<span class="magnitude-chip ${level}"><span class="magnitude-dot"></span>M${Number(mag || 0).toFixed(1)}</span>`;
+        }
+
+        async function copyPlace(event, index) {
+            event?.stopPropagation?.();
+            const quake = window.currentEarthquakeData?.[index];
+            const place = quake?.properties?.place || '未知地点';
+            try {
+                await navigator.clipboard.writeText(place);
+                setFilterMessage(`已复制地点：${place}`, 'success');
+            } catch (error) {
+                setFilterMessage('复制失败，请手动复制', 'error');
+            }
+        }
+
+        function locateQuake(event, index) {
+            event?.stopPropagation?.();
+            const quake = window.currentEarthquakeData?.[index];
+            if (!quake) return;
+            selectedQuakeKey = getQuakeStableKey(quake, index);
+            applyCurrentView();
+            const mapWrap = document.querySelector('.maps-container');
+            if (mapWrap) {
+                mapWrap.classList.add('is-focusing');
+                mapWrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => mapWrap.classList.remove('is-focusing'), 1200);
+            }
+            showQuakeDetail(index);
+        }
+
         async function displayEarthquakes(data) {
             let quakes = data.features;
             const quakeListDiv = document.getElementById('quakeList');
@@ -555,8 +626,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             if (!quakes || quakes.length === 0) {
                 const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
                 quakeListDiv.innerHTML = domesticOnlyEnabled
-                    ? '<tr><td colspan="4" style="text-align: center; padding: 40px;">📭 筛选后暂无国内地震数据</td></tr>'
-                    : '<tr><td colspan="4" style="text-align: center; padding: 40px;">📭 暂无地震数据</td></tr>';
+                    ? `<tr><td class="table-state" colspan="${TABLE_COLSPAN}">📭 筛选后暂无国内地震数据</td></tr>`
+                    : `<tr><td class="table-state" colspan="${TABLE_COLSPAN}">📭 暂无地震数据</td></tr>`;
                 return;
             }
 
@@ -570,18 +641,29 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 const mag = props.mag;
                 const isMajor = mag >= 7;
                 const clickAttr = isMajor ? ` onclick="showQuakeDetail(${i})"` : '';
-                const classAttr = isMajor ? ' class="quake-item-major"' : '';
+                const quakeKey = getQuakeStableKey(quake, i);
+                const isSelected = selectedQuakeKey && quakeKey === selectedQuakeKey;
+                const classList = `${isMajor ? 'quake-item-major' : ''}${isSelected ? ' quake-row-selected' : ''}`.trim();
+                const classAttr = classList ? ` class="${classList}"` : '';
                 const placeText = props.place || '未知地点';
                 const placeEsc = escapeHtml(placeText);
                 const placeKey = getPlaceCacheKey(placeText, quake.geometry.coordinates[1], quake.geometry.coordinates[0]);
                 const placeKeyEsc = escapeHtml(placeKey);
+                const fullTime = new Date(props.time).toLocaleString();
+                const relativeTime = formatRelativeTime(props.time);
 
                 html += `
                     <tr${classAttr}${clickAttr} data-quake-index="${i}">
-                        <td><span class="magnitude ${getMagnitudeClass(mag)}">M${mag.toFixed(1)}${isMajor ? ' ⭐' : ''}</span></td>
-                        <td class="place" data-orig-place="${placeEsc}" data-place-key="${placeKeyEsc}" data-lat="${quake.geometry.coordinates[1]}" data-lng="${quake.geometry.coordinates[0]}">📍 ${placeEsc}</td>
-                        <td>🕒 ${formatTime(props.time)}</td>
-                        <td><span class="tsunami ${props.tsunami === 1 ? 'tsunami-yes' : 'tsunami-no'}">${props.tsunami === 1 ? '⚠️ 有' : '无'}</span></td>
+                        <td data-label="震级">${buildMagnitudeChip(mag)}</td>
+                        <td data-label="地点" class="place" data-orig-place="${placeEsc}" data-place-key="${placeKeyEsc}" data-lat="${quake.geometry.coordinates[1]}" data-lng="${quake.geometry.coordinates[0]}">📍 ${placeEsc}</td>
+                        <td data-label="时间" class="time-cell" title="${fullTime}">🕒 ${relativeTime}</td>
+                        <td data-label="海啸"><span class="tsunami ${props.tsunami === 1 ? 'tsunami-yes' : 'tsunami-no'}">${props.tsunami === 1 ? '⚠️ 有' : '无'}</span></td>
+                        <td data-label="操作">
+                            <div class="row-actions">
+                                <button type="button" class="action-icon" title="复制地点" onclick="copyPlace(event, ${i})">📋</button>
+                                <button type="button" class="action-icon" title="在地图定位" onclick="locateQuake(event, ${i})">🧭</button>
+                            </div>
+                        </td>
                     </tr>
                 `;
             }
@@ -1006,6 +1088,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 return;
             }
 
+            lastFilterParams = { startDate, endDate, minMag, maxMag };
             loadEarthquakesWithFilter(startDate, endDate, minMag, maxMag);
         }
 
@@ -1048,10 +1131,22 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             console.groupEnd();
         }
 
+        function retryLastFilterLoad() {
+            if (!lastFilterParams) {
+                originalFetchEarthquakes();
+                return;
+            }
+            const { startDate, endDate, minMag, maxMag } = lastFilterParams;
+            loadEarthquakesWithFilter(startDate, endDate, minMag, maxMag);
+        }
+
+        function retryInitialLoad() {
+            originalFetchEarthquakes();
+        }
+
         async function loadEarthquakesWithFilter(queryStartDate, queryEndDate, queryMinMag, queryMaxMag) {
-            const quakeListDiv = document.getElementById('quakeList');
             try {
-                quakeListDiv.innerHTML = `<div class="loading">🔄 正在加载数据（${queryStartDate} 至 ${queryEndDate}，最小震级 M${queryMinMag}）...</div>`;
+                renderTableLoading(`🔄 正在加载数据（${queryStartDate} 至 ${queryEndDate}，最小震级 M${queryMinMag}）...`);
                 
                 const newApiUrl = buildEarthquakeApiUrl(queryStartDate, queryEndDate, queryMinMag, queryMaxMag);
                 const response = await fetch(newApiUrl);
@@ -1061,7 +1156,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
                 if (filtered.length > 2000) {
                     setFilterMessage(`❌ 符合条件的数据过多（${filtered.length} 条 > 2000 条），请缩小筛选范围`, 'error');
-                    quakeListDiv.innerHTML = '<div class="loading">📭 暂无数据</div>';
+                    document.getElementById('quakeList').innerHTML = `<tr><td class="table-state" colspan="${TABLE_COLSPAN}">📭 暂无数据</td></tr>`;
                     return;
                 }
 
@@ -1074,7 +1169,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 originalEarthquakeData = [...filtered];
                 applyCurrentView();
             } catch (error) {
-                quakeListDiv.innerHTML = `<div class="error">❌ 加载失败：${error.message}<br>请检查网络连接或筛选条件</div>`;
+                renderTableError(`加载失败：${error.message}，请检查网络连接或筛选条件`, 'retryLastFilterLoad');
                 setFilterMessage(`❌ 加载失败：${error.message}`, 'error');
                 console.error('获取地震数据失败:', error);
             }
@@ -1111,9 +1206,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         // 注释
         const originalFetchEarthquakes = async function fetchEarthquakes() {
-            const quakeListDiv = document.getElementById('quakeList');
             try {
-                quakeListDiv.innerHTML = '<div class="loading">🔄 正在加载地震数据...</div>';
+                renderTableLoading('🔄 正在加载地震数据...');
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error('网络请求失败');
                 const data = await response.json();
@@ -1123,7 +1217,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 clearFilterMessage();
                 setFilterMessage(`📊 已加载 ${finalDisplayData.length} 条地震数据`, 'info');
             } catch (error) {
-                quakeListDiv.innerHTML = `<div class="error">❌ 加载失败：${error.message}<br>请检查网络连接</div>`;
+                renderTableError(`加载失败：${error.message}，请检查网络连接`, 'retryInitialLoad');
                 console.error('获取地震数据失败:', error);
             }
         };
@@ -1149,6 +1243,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         setInterval(originalFetchEarthquakes, 24 * 60 * 60 * 1000);
     
 window.showQuakeDetail = showQuakeDetail;
+window.copyPlace = copyPlace;
+window.locateQuake = locateQuake;
+window.retryLastFilterLoad = retryLastFilterLoad;
+window.retryInitialLoad = retryInitialLoad;
 
 
 

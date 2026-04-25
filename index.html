@@ -702,6 +702,331 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(211, 47, 47, 0.15);
         }
+        :root {
+            --bg: #f5f7fb;
+            --bg-soft: #eef3ff;
+            --panel: rgba(255, 255, 255, 0.78);
+            --panel-border: rgba(255, 255, 255, 0.45);
+            --text: #1f2530;
+            --text-sub: #647084;
+            --primary: #4f46e5;
+            --primary-soft: rgba(79, 70, 229, 0.12);
+            --danger: #d23a57;
+            --shadow: 0 10px 28px rgba(20, 35, 90, 0.08);
+        }
+
+        body {
+            background: radial-gradient(circle at 20% -10%, var(--bg-soft), var(--bg) 45%);
+            color: var(--text);
+            line-height: 1.6;
+            letter-spacing: 0.2px;
+        }
+
+        .header,
+        .filter-panel,
+        .stat-card,
+        .quake-list,
+        .magnitude-info,
+        .magnitude-detailed {
+            background: var(--panel) !important;
+            border: 1px solid var(--panel-border) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: var(--shadow);
+        }
+
+        .sort-toolbar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed rgba(128, 138, 164, 0.35);
+        }
+
+        .sort-label {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-right: 6px;
+        }
+
+        .sort-btn {
+            border: 1px solid rgba(120, 130, 152, 0.32);
+            background: rgba(255, 255, 255, 0.65);
+            color: var(--text);
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 12px;
+            line-height: 1;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.22s;
+        }
+
+        .sort-btn:hover {
+            transform: translateY(-1px);
+            border-color: var(--primary);
+            background: var(--primary-soft);
+        }
+
+        .sort-btn.active {
+            background: linear-gradient(135deg, var(--primary), #5ba4ff);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+        }
+
+        .quake-table thead {
+            background: linear-gradient(180deg, rgba(125, 144, 191, 0.16), rgba(125, 144, 191, 0.08));
+        }
+
+        .quake-table tbody tr:nth-child(even) {
+            background: rgba(111, 133, 170, 0.05);
+        }
+
+        .quake-table tbody tr:hover {
+            background: rgba(79, 70, 229, 0.1) !important;
+        }
+
+        .quake-table th:nth-child(5),
+        .quake-table td:nth-child(5) {
+            text-align: center;
+            width: 96px;
+        }
+
+        .magnitude-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            color: #fff;
+            font-weight: 700;
+            font-size: 13px;
+            min-width: 84px;
+            justify-content: center;
+        }
+
+        .magnitude-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+        }
+
+        .magnitude-chip.mag-low { background: linear-gradient(135deg, #16a34a, #22c55e); }
+        .magnitude-chip.mag-mid { background: linear-gradient(135deg, #f97316, #fb923c); }
+        .magnitude-chip.mag-high { background: linear-gradient(135deg, #dc2626, #fb7185); }
+
+        .time-cell {
+            color: var(--text-sub);
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .row-actions {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .action-icon {
+            border: 1px solid rgba(120, 130, 152, 0.28);
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            width: 30px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .action-icon:hover {
+            border-color: var(--primary);
+            background: var(--primary-soft);
+        }
+
+        .skeleton-row td {
+            padding: 11px 16px;
+        }
+
+        .skeleton {
+            height: 12px;
+            border-radius: 6px;
+            background: linear-gradient(90deg, rgba(192, 202, 220, 0.26), rgba(192, 202, 220, 0.5), rgba(192, 202, 220, 0.26));
+            background-size: 220% 100%;
+            animation: shimmer 1.2s infinite linear;
+        }
+
+        .skeleton.sm { width: 56px; }
+        .skeleton.md { width: 72%; }
+        .skeleton.lg { width: 88%; }
+        .skeleton.xs { width: 44px; }
+
+        @keyframes shimmer {
+            0% { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
+
+        .table-state {
+            text-align: center;
+            padding: 30px 12px !important;
+            color: var(--text-sub);
+            font-size: 14px;
+        }
+
+        .retry-btn {
+            margin-top: 10px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary), #5ba4ff);
+            color: #fff;
+            border-radius: 999px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .maps-container.is-focusing {
+            box-shadow: 0 0 0 2px var(--primary-soft), 0 0 32px rgba(79, 70, 229, 0.25);
+            transition: box-shadow 0.28s;
+        }
+
+        .quake-row-selected {
+            background: rgba(250, 204, 21, 0.14) !important;
+            box-shadow: inset 3px 0 0 #facc15;
+        }
+
+        @media (max-width: 768px) {
+            .maps-container {
+                flex-direction: column;
+                height: auto !important;
+            }
+
+            .globe-box, .mercator-box {
+                width: 100%;
+                min-height: 320px !important;
+                height: min(58vh, 420px);
+            }
+
+            .filter-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+            }
+
+            .filter-buttons {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .filter-buttons > div,
+            .filter-buttons > label,
+            .filter-btn {
+                width: 100%;
+            }
+
+            .filter-buttons > div {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .sort-toolbar {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .sort-label {
+                grid-column: 1 / -1;
+            }
+
+            .stats {
+                justify-content: flex-start;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 6px;
+                scrollbar-width: thin;
+            }
+
+            .stat-card {
+                min-width: 150px;
+                flex: 0 0 auto;
+            }
+
+            .quake-table thead {
+                display: none;
+            }
+
+            .quake-table,
+            .quake-table tbody,
+            .quake-table tr,
+            .quake-table td {
+                display: block;
+                width: 100%;
+            }
+
+            .quake-table tbody tr {
+                border: 1px solid rgba(129, 146, 177, 0.25);
+                border-radius: 14px;
+                margin-bottom: 10px;
+                background: rgba(255, 255, 255, 0.68);
+                overflow: hidden;
+                box-shadow: 0 4px 14px rgba(30, 49, 98, 0.08);
+            }
+
+            .quake-table td {
+                padding: 10px 12px !important;
+                border-bottom: 1px dashed rgba(132, 148, 180, 0.28);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                text-align: right !important;
+                width: 100% !important;
+            }
+
+            .quake-table td::before {
+                content: attr(data-label);
+                color: var(--text-sub);
+                font-size: 12px;
+                font-weight: 600;
+                text-align: left;
+                flex: 0 0 auto;
+            }
+
+            .quake-table td:last-child {
+                border-bottom: none;
+            }
+
+            .quake-table td.place {
+                white-space: normal;
+                text-align: left !important;
+            }
+
+            .row-actions {
+                justify-content: flex-end;
+            }
+
+            .table-state {
+                display: block !important;
+                text-align: center !important;
+                padding: 24px 12px !important;
+            }
+
+            .table-state::before {
+                display: none !important;
+                content: '';
+            }
+
+            .skeleton-row td::before {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -753,6 +1078,13 @@
                                     <button class="filter-btn filter-btn-reset" id="filterResetBtn">↻ 重置条件</button>
                                 </div>
                         </div>
+                        <div id="quakeSortControls" class="sort-toolbar" role="group" aria-label="地震排序">
+                            <span class="sort-label">排序方式</span>
+                            <button type="button" class="sort-btn" data-sort-field="mag" data-sort-order="desc">震级 ⬇</button>
+                            <button type="button" class="sort-btn" data-sort-field="mag" data-sort-order="asc">震级 ⬆</button>
+                            <button type="button" class="sort-btn" data-sort-field="time" data-sort-order="desc">时间 ⬇</button>
+                            <button type="button" class="sort-btn" data-sort-field="time" data-sort-order="asc">时间 ⬆</button>
+                        </div>
                         <div id="filterMessage"></div>
         </div>
         <div class="stats" id="stats">
@@ -780,12 +1112,12 @@
                         <strong>原理：</strong>基于地震仪记录的波形振幅。通过测量地面的 <strong>运动幅度</strong> 来判断地震大小（对数尺度）。
                     </div>
                     <div class="magnitude-feature">• 测量对象：地面的 <strong>振动幅度</strong> 而非能量</div>
-                    <div class="magnitude-feature">• 震级上限：约<strong>6.8-7.0</strong>（易发生饱和）</div>
+                    <div class="magnitude-feature">• 震级上限：约<strong>7.8-8.0</strong>（易发生饱和）</div>
                     <div class="magnitude-feature">• 饱和现象：大地震时振幅"不再增长"，无法真实反映</div>
                     <div class="magnitude-feature">• 地区特性：受距离、地质条件影响，区域性较强</div>
                 </div>
                 <div class="magnitude-comparison-note">
-                    💡 <strong>核心差别：</strong>矩震级测的是"能量释放量"，里氏震级测的是"地面摇晃程度"。强地震时，地面摇晃可能饱和，但释放的能量仍在增加，所以矩震级≥里氏震级。本网站采用国际标准的矩震级(Mw)。
+                    💡 <strong>核心差别：</strong>矩震级测的是"能量释放量"，里氏震级测的是"地面摇晃程度"。强地震时，地面摇晃可能饱和，但释放的能量仍在增加，所以矩震级≥里氏震级。本网页采用矩震级(Mw)。
                 </div>
             </div>
         </div>
@@ -871,10 +1203,11 @@
                         <th>地点</th>
                         <th>时间</th>
                         <th>海啸</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody id="quakeList" class="loading">
-                    <tr><td colspan="4" style="text-align: center; padding: 40px;">加载地震数据中...</td></tr>
+                    <tr><td colspan="5" style="text-align: center; padding: 40px;">加载地震数据中...</td></tr>
                 </tbody>
             </table>
         </div>
