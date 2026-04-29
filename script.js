@@ -562,6 +562,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         let currentListRenderVersion = 0;
         let lastFilterParams = null;
         const TABLE_COLSPAN = 5;
+        let calendarYear = new Date().getFullYear();
+        let calendarDataMap = new Map();
 
         function getSortValue(quake, field) {
             if (field === 'time') return Number(quake?.properties?.time || 0);
@@ -617,6 +619,98 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 setSort(btn.getAttribute('data-sort-field'), btn.getAttribute('data-sort-order'));
             });
             updateSortButtonActiveState();
+        }
+
+        function getYearDateRange(year) {
+            const now = new Date();
+            const start = `${year}-01-01`;
+            const end = year === now.getFullYear() ? formatDate(now) : `${year}-12-31`;
+            return { start, end };
+        }
+
+        function getCalendarColor(maxMag, countAbove4) {
+            if (maxMag == null || maxMag < 5) return 'hsl(0 0% 92%)';
+            const safeCount = Math.max(1, Number(countAbove4 || 0));
+            const intensity = Math.min(0.35, safeCount * 0.045);
+            if (maxMag >= 8) return `hsl(0 78% ${Math.max(20, 32 - intensity * 40)}%)`;
+            if (maxMag >= 7) return `hsl(2 80% ${Math.max(34, 46 - intensity * 35)}%)`;
+            if (maxMag >= 6) return `hsl(28 90% ${Math.max(44, 60 - intensity * 30)}%)`;
+            return `hsl(48 92% ${Math.max(52, 76 - intensity * 28)}%)`;
+        }
+
+        async function fetchCalendarData(year = calendarYear) {
+            const stateEl = document.getElementById('calendarState');
+            const { start, end } = getYearDateRange(year);
+            stateEl.textContent = `加载中：${start} 至 ${end}`;
+            stateEl.classList.remove('error');
+            try {
+                const resp = await fetch(`/api/earthquakes/calendar?start=${start}&end=${end}`);
+                if (!resp.ok) {
+                    let err = `HTTP ${resp.status}`;
+                    try {
+                        const payload = await resp.json();
+                        if (payload?.message) err = payload.message;
+                    } catch (e) {}
+                    throw new Error(err);
+                }
+                const rows = await resp.json();
+                calendarDataMap = new Map((rows || []).map(item => [item.date, item]));
+                renderCalendar(year);
+                stateEl.textContent = `已加载 ${year} 年日历`;
+            } catch (error) {
+                document.getElementById('calendarContainer').innerHTML = '';
+                stateEl.textContent = `日历加载失败：${error.message}`;
+                stateEl.classList.add('error');
+            }
+        }
+
+        function renderCalendar(year = calendarYear) {
+            const wrap = document.getElementById('calendarContainer');
+            const label = document.getElementById('calendarYearLabel');
+            if (!wrap || !label) return;
+
+            wrap.innerHTML = '';
+            label.textContent = `${year}`;
+            const now = new Date();
+            const endLimit = year === now.getFullYear() ? formatDate(now) : `${year}-12-31`;
+            const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+            for (let month = 0; month < 12; month++) {
+                const monthWrap = document.createElement('div');
+                monthWrap.className = 'calendar-month';
+                monthWrap.innerHTML = `<div class="calendar-month-name">${monthNames[month]}</div><div class="calendar-grid"></div>`;
+                const grid = monthWrap.querySelector('.calendar-grid');
+
+                const firstDay = new Date(Date.UTC(year, month, 1));
+                const dayOffset = firstDay.getUTCDay();
+                for (let i = 0; i < dayOffset; i++) {
+                    const filler = document.createElement('div');
+                    filler.className = 'calendar-day empty';
+                    grid.appendChild(filler);
+                }
+
+                const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateText = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    if (dateText > endLimit) break;
+                    const cell = document.createElement('button');
+                    const item = calendarDataMap.get(dateText) || { date: dateText, maxMag: null, countAbove4: 0 };
+                    const maxMagText = item.maxMag == null ? '无' : Number(item.maxMag).toFixed(1);
+                    cell.type = 'button';
+                    cell.className = 'calendar-day';
+                    cell.style.background = getCalendarColor(item.maxMag, item.countAbove4);
+                    cell.title = `日期: ${dateText}\n最大震级: ${maxMagText}\n5级以上次数: ${item.countAbove4}`;
+                    cell.addEventListener('click', () => {
+                        document.getElementById('filterStartDate').value = dateText;
+                        document.getElementById('filterEndDate').value = dateText;
+                        const { minMag, maxMag } = getFilterValues();
+                        lastFilterParams = { startDate: dateText, endDate: dateText, minMag, maxMag };
+                        loadEarthquakesWithFilter(dateText, dateText, minMag, maxMag);
+                    });
+                    grid.appendChild(cell);
+                }
+                wrap.appendChild(monthWrap);
+            }
         }
         
         function getMagnitudeLevel(mag) {
@@ -1407,6 +1501,15 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             document.getElementById('filterApplyBtn').addEventListener('click', filterEarthquakes);
             document.getElementById('filterResetBtn').addEventListener('click', resetFilter);
             document.getElementById('domesticOnlyToggle')?.addEventListener('change', rerenderByCurrentToggle);
+            document.getElementById('calendarPrevBtn')?.addEventListener('click', () => {
+                calendarYear -= 1;
+                fetchCalendarData(calendarYear);
+            });
+            document.getElementById('calendarNextBtn')?.addEventListener('click', () => {
+                const currentYear = new Date().getFullYear();
+                calendarYear = Math.min(currentYear, calendarYear + 1);
+                fetchCalendarData(calendarYear);
+            });
             bindSortControls();
             document.getElementById('quakeDetailClose').addEventListener('click', closeQuakeDetail);
             const modalEl = document.getElementById('quakeDetailModal');
@@ -1423,6 +1526,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 runChinaDomainRegressionChecks();
             }
             originalFetchEarthquakes();
+            fetchCalendarData(calendarYear);
         });
 
         // 注释
