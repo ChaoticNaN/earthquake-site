@@ -528,11 +528,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         window.updateMercatorMarkers = updateMercatorMarkers;
     
 
-        // 鐠侊紕鐣绘潻鍥у箵3楠炲娈戦弮銉︽埂閼煎啫娲?
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setFullYear(endDate.getFullYear() - 3);
-        
         function formatDate(date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -541,29 +536,32 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         }
 
         // 注释
-        function buildEarthquakeApiUrl(queryStartDate, queryEndDate, queryMinMag, queryMaxMag) {
+        function buildEarthquakeApiUrl(queryStartDate, queryEndDate, queryMinMag, queryMaxMag, queryLimit = 2000, queryTimezone = '') {
             const formattedStart = formatDate(new Date(queryStartDate));
             const formattedEnd = formatDate(new Date(queryEndDate));
             const minMag = Math.max(0, queryMinMag || 5.5); // 最小值允许为 0
             const maxMag = Number.isFinite(queryMaxMag) ? queryMaxMag : '';
+            const limit = Math.max(1, Math.min(2000, Math.floor(Number(queryLimit) || 100)));
             const params = new URLSearchParams({
                 start: formattedStart,
                 end: formattedEnd,
-                minMag: String(minMag)
+                minMag: String(minMag),
+                limit: String(limit)
             });
             if (maxMag !== '') params.set('maxMag', String(maxMag));
+            if (queryTimezone) params.set('tz', queryTimezone);
             return `/api/earthquakes?${params.toString()}`;
         }
-        
-        const apiUrl = buildEarthquakeApiUrl(startDate, endDate, 5.5, Infinity);
         
         window.currentEarthquakeData = [];
         let currentSortState = { field: 'mag', order: 'desc' };
         let currentListRenderVersion = 0;
         let lastFilterParams = null;
         const TABLE_COLSPAN = 5;
-        let calendarYear = new Date().getFullYear();
+        let calendarYear = Number(getBeijingDateString().slice(0, 4));
         let calendarDataMap = new Map();
+        const CALENDAR_CLICK_MIN_MAG = 5;
+        const CALENDAR_CLICK_MAX_MAG = Infinity;
 
         function getSortValue(quake, field) {
             if (field === 'time') return Number(quake?.properties?.time || 0);
@@ -621,16 +619,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             updateSortButtonActiveState();
         }
 
-        function getYearDateRange(year) {
-            const now = new Date();
-            const start = `${year}-01-01`;
-            const end = year === now.getFullYear() ? formatDate(now) : `${year}-12-31`;
-            return { start, end };
-        }
-
-        function getCalendarColor(maxMag, countAbove4) {
+        function getCalendarColor(maxMag, count) {
             if (maxMag == null || maxMag < 5) return 'hsl(0 0% 92%)';
-            const safeCount = Math.max(1, Number(countAbove4 || 0));
+            const safeCount = Math.max(1, Number(count || 0));
             const intensity = Math.min(0.35, safeCount * 0.045);
             if (maxMag >= 8) return `hsl(0 78% ${Math.max(20, 32 - intensity * 40)}%)`;
             if (maxMag >= 7) return `hsl(2 80% ${Math.max(34, 46 - intensity * 35)}%)`;
@@ -640,11 +631,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         async function fetchCalendarData(year = calendarYear) {
             const stateEl = document.getElementById('calendarState');
-            const { start, end } = getYearDateRange(year);
-            stateEl.textContent = `加载中：${start} 至 ${end}`;
+            stateEl.textContent = `加载中：${year} 年`;
             stateEl.classList.remove('error');
             try {
-                const resp = await fetch(`/api/earthquakes/calendar?start=${start}&end=${end}`);
+                const resp = await fetch(`/api/earthquakes/calendar-stats?year=${year}`);
                 if (!resp.ok) {
                     let err = `HTTP ${resp.status}`;
                     try {
@@ -653,8 +643,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                     } catch (e) {}
                     throw new Error(err);
                 }
-                const rows = await resp.json();
-                calendarDataMap = new Map((rows || []).map(item => [item.date, item]));
+                const payload = await resp.json();
+                const rows = Array.isArray(payload?.stats) ? payload.stats : [];
+                calendarDataMap = new Map(rows.map(item => [item.date, item]));
                 renderCalendar(year);
                 stateEl.textContent = `已加载 ${year} 年日历`;
             } catch (error) {
@@ -671,8 +662,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
             wrap.innerHTML = '';
             label.textContent = `${year}`;
-            const now = new Date();
-            const endLimit = year === now.getFullYear() ? formatDate(now) : `${year}-12-31`;
+            const beijingToday = getBeijingDateString();
+            const beijingCurrentYear = Number(beijingToday.slice(0, 4));
+            const endLimit = year === beijingCurrentYear ? beijingToday : `${year}-12-31`;
             const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
 
             for (let month = 0; month < 12; month++) {
@@ -694,18 +686,23 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                     const dateText = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     if (dateText > endLimit) break;
                     const cell = document.createElement('button');
-                    const item = calendarDataMap.get(dateText) || { date: dateText, maxMag: null, countAbove4: 0 };
+                    const item = calendarDataMap.get(dateText) || { date: dateText, maxMag: null, count: 0 };
                     const maxMagText = item.maxMag == null ? '无' : Number(item.maxMag).toFixed(1);
                     cell.type = 'button';
                     cell.className = 'calendar-day';
-                    cell.style.background = getCalendarColor(item.maxMag, item.countAbove4);
-                    cell.title = `日期: ${dateText}\n最大震级: ${maxMagText}\n5级以上次数: ${item.countAbove4}`;
+                    cell.style.background = getCalendarColor(item.maxMag, item.count);
+                    cell.title = `日期: ${dateText} (北京时间)\n最大震级: ${maxMagText}\n5级以上次数: ${item.count}`;
                     cell.addEventListener('click', () => {
                         document.getElementById('filterStartDate').value = dateText;
                         document.getElementById('filterEndDate').value = dateText;
-                        const { minMag, maxMag } = getFilterValues();
-                        lastFilterParams = { startDate: dateText, endDate: dateText, minMag, maxMag };
-                        loadEarthquakesWithFilter(dateText, dateText, minMag, maxMag);
+                        lastFilterParams = {
+                            startDate: dateText,
+                            endDate: dateText,
+                            minMag: CALENDAR_CLICK_MIN_MAG,
+                            maxMag: CALENDAR_CLICK_MAX_MAG,
+                            timezone: 'Asia/Shanghai'
+                        };
+                        loadEarthquakesWithFilter(dateText, dateText, CALENDAR_CLICK_MIN_MAG, CALENDAR_CLICK_MAX_MAG, 2000, 'Asia/Shanghai');
                     });
                     grid.appendChild(cell);
                 }
@@ -1393,8 +1390,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 return;
             }
 
-            lastFilterParams = { startDate, endDate, minMag, maxMag };
-            loadEarthquakesWithFilter(startDate, endDate, minMag, maxMag);
+            lastFilterParams = { startDate, endDate, minMag, maxMag, timezone: '' };
+            loadEarthquakesWithFilter(startDate, endDate, minMag, maxMag, 2000, '');
         }
 
         function rerenderByCurrentToggle() {
@@ -1441,19 +1438,19 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 originalFetchEarthquakes();
                 return;
             }
-            const { startDate, endDate, minMag, maxMag } = lastFilterParams;
-            loadEarthquakesWithFilter(startDate, endDate, minMag, maxMag);
+            const { startDate, endDate, minMag, maxMag, timezone = '' } = lastFilterParams;
+            loadEarthquakesWithFilter(startDate, endDate, minMag, maxMag, 2000, timezone);
         }
 
         function retryInitialLoad() {
             originalFetchEarthquakes();
         }
 
-        async function loadEarthquakesWithFilter(queryStartDate, queryEndDate, queryMinMag, queryMaxMag) {
+        async function loadEarthquakesWithFilter(queryStartDate, queryEndDate, queryMinMag, queryMaxMag, queryLimit = 2000, queryTimezone = '') {
             try {
                 renderTableLoading(`🔄 正在加载数据（${queryStartDate} 至 ${queryEndDate}，最小震级 M${queryMinMag}）...`);
                 
-                const newApiUrl = buildEarthquakeApiUrl(queryStartDate, queryEndDate, queryMinMag, queryMaxMag);
+                const newApiUrl = buildEarthquakeApiUrl(queryStartDate, queryEndDate, queryMinMag, queryMaxMag, queryLimit, queryTimezone);
                 const response = await fetch(newApiUrl);
                 if (!response.ok) {
                     let errMsg = '网络请求失败';
@@ -1492,7 +1489,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             
             // 注释
             initializeFilterDates();
-            originalFetchEarthquakes();
+            filterEarthquakes();
         }
 
         // 注释
@@ -1506,7 +1503,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 fetchCalendarData(calendarYear);
             });
             document.getElementById('calendarNextBtn')?.addEventListener('click', () => {
-                const currentYear = new Date().getFullYear();
+                const currentYear = Number(getBeijingDateString().slice(0, 4));
                 calendarYear = Math.min(currentYear, calendarYear + 1);
                 fetchCalendarData(calendarYear);
             });
@@ -1525,29 +1522,20 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             if (isLocalDebugHost) {
                 runChinaDomainRegressionChecks();
             }
-            originalFetchEarthquakes();
             fetchCalendarData(calendarYear);
+            originalFetchEarthquakes();
         });
 
         // 注释
         const originalFetchEarthquakes = async function fetchEarthquakes() {
             try {
                 renderTableLoading('🔄 正在加载地震数据...');
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    let errMsg = '网络请求失败';
-                    try {
-                        const errData = await response.json();
-                        if (errData?.message) errMsg = errData.message;
-                    } catch (e) {}
-                    throw new Error(errMsg);
-                }
-                const data = await response.json();
-                originalEarthquakeData = data.features || [];
-                applyCurrentView();
-                const finalDisplayData = window.currentEarthquakeData || [];
-                clearFilterMessage();
-                setFilterMessage(`📊 已加载 ${finalDisplayData.length} 条地震数据`, 'info');
+                const today = getBeijingDateString();
+                document.getElementById('filterStartDate').value = today;
+                document.getElementById('filterEndDate').value = today;
+                const { minMag, maxMag } = getFilterValues();
+                lastFilterParams = { startDate: today, endDate: today, minMag, maxMag, timezone: 'Asia/Shanghai' };
+                await loadEarthquakesWithFilter(today, today, minMag, maxMag, 2000, 'Asia/Shanghai');
             } catch (error) {
                 renderTableError(`加载失败：${error.message}，请检查网络连接`, 'retryInitialLoad');
                 console.error('获取地震数据失败:', error);
@@ -1557,8 +1545,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         // 注释
         function initializeFilterDates() {
             const endDate = new Date();
-            const startDate = new Date();
-            startDate.setFullYear(endDate.getFullYear() - 3);
+            const startDate = new Date(endDate);
+            startDate.setDate(endDate.getDate() - 29);
             
             const formatDate = (date) => {
                 const year = date.getFullYear();
@@ -1572,7 +1560,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             document.getElementById('filterMinMag').value = '5.5';
         }
 
-        setInterval(originalFetchEarthquakes, 24 * 60 * 60 * 1000);
+        setInterval(() => fetchCalendarData(calendarYear), 24 * 60 * 60 * 1000);
     
 window.showQuakeDetail = showQuakeDetail;
 window.copyPlace = copyPlace;
@@ -1588,3 +1576,16 @@ window.retryInitialLoad = retryInitialLoad;
 
 
 
+        function getBeijingDateString(input = Date.now()) {
+            const date = input instanceof Date ? input : new Date(input);
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Shanghai',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).formatToParts(date);
+            const year = parts.find(p => p.type === 'year')?.value;
+            const month = parts.find(p => p.type === 'month')?.value;
+            const day = parts.find(p => p.type === 'day')?.value;
+            return `${year}-${month}-${day}`;
+        }

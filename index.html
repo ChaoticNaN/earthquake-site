@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -380,7 +380,7 @@
 
         .calendar-panel {
             max-width: 1400px;
-            margin: 20px auto 0;
+            margin: 16px auto 20px;
             padding: 20px;
             background: #ffffff;
             border: 1px solid #e0e0e0;
@@ -1157,6 +1157,20 @@
         <div class="subtitle">数据来源：USGS | 支持灵活筛选时间范围和震级 | 红点大小=震级 | 光照基于真实世界时间动态变化</div>
         <div class="time-info" id="realTimeDisplay">🕒 加载时间...</div>
     </div>
+    <div class="calendar-panel">
+            <div class="calendar-header">
+                <div class="calendar-title">地震日历</div>
+                <div class="calendar-nav">
+                    <button type="button" id="calendarPrevBtn" class="calendar-nav-btn">上一年</button>
+                    <span id="calendarYearLabel" class="calendar-year">-</span>
+                    <button type="button" id="calendarNextBtn" class="calendar-nav-btn">下一年</button>
+                </div>
+            </div>
+            <div id="calendarState" class="calendar-state">加载中...</div>
+            <div class="calendar-scroll">
+                <div id="calendarContainer" class="calendar-months"></div>
+            </div>
+        </div>
 
     <div class="maps-container">
         <div class="globe-box" id="globeContainer">
@@ -1208,20 +1222,6 @@
                             <button type="button" class="sort-btn" data-sort-field="time" data-sort-order="asc">时间 ⬆</button>
                         </div>
                         <div id="filterMessage"></div>
-        </div>
-        <div class="calendar-panel">
-            <div class="calendar-header">
-                <div class="calendar-title">地震日历</div>
-                <div class="calendar-nav">
-                    <button type="button" id="calendarPrevBtn" class="calendar-nav-btn">上一年</button>
-                    <span id="calendarYearLabel" class="calendar-year">-</span>
-                    <button type="button" id="calendarNextBtn" class="calendar-nav-btn">下一年</button>
-                </div>
-            </div>
-            <div id="calendarState" class="calendar-state">加载中...</div>
-            <div class="calendar-scroll">
-                <div id="calendarContainer" class="calendar-months"></div>
-            </div>
         </div>
         <div class="stats" id="stats">
             <div class="stat-card"><div class="stat-number" id="totalCount">-</div><div class="stat-label">📊 地震总数</div></div>
