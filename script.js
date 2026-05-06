@@ -1590,6 +1590,70 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             update();
         }
 
+        function initHomeCarousel() {
+            const track = document.getElementById('carouselTrack');
+            const prevBtn = document.getElementById('carouselPrev');
+            const nextBtn = document.getElementById('carouselNext');
+            const dotsWrap = document.getElementById('carouselDots');
+            if (!track || !prevBtn || !nextBtn || !dotsWrap) return;
+
+            const carouselImages = [
+                { src: '/LightShake.png', alt: '轻微震感场景' },
+                { src: '/ModerateCrack.png', alt: '中度破坏场景' },
+                { src: '/CollapsedRealm.png', alt: '严重倒塌场景' },
+                { src: '/TerrainShift.png', alt: '地表形变场景' }
+            ];
+
+            track.innerHTML = carouselImages.map(item => `
+                <div class="carousel-slide">
+                    <img src="${item.src}" alt="${item.alt}">
+                </div>
+            `).join('');
+
+            const slides = Array.from(track.querySelectorAll('.carousel-slide'));
+            if (!slides.length) return;
+            let index = 0;
+            let timer = null;
+
+            dotsWrap.innerHTML = slides
+                .map((_, i) => `<button type="button" class="carousel-dot${i === 0 ? ' active' : ''}" data-index="${i}" aria-label="切换到第${i + 1}张"></button>`)
+                .join('');
+
+            const dots = Array.from(dotsWrap.querySelectorAll('.carousel-dot'));
+            const render = () => {
+                track.style.transform = `translateX(-${index * 100}%)`;
+                dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+            };
+
+            const go = (nextIndex) => {
+                index = (nextIndex + slides.length) % slides.length;
+                render();
+            };
+
+            const restartAuto = () => {
+                if (timer) clearInterval(timer);
+                timer = setInterval(() => go(index + 1), 5000);
+            };
+
+            prevBtn.addEventListener('click', () => {
+                go(index - 1);
+                restartAuto();
+            });
+            nextBtn.addEventListener('click', () => {
+                go(index + 1);
+                restartAuto();
+            });
+            dotsWrap.addEventListener('click', (e) => {
+                const dot = e.target.closest('.carousel-dot');
+                if (!dot) return;
+                go(Number(dot.getAttribute('data-index')));
+                restartAuto();
+            });
+
+            render();
+            restartAuto();
+        }
+
         // 注释
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, binding events');
@@ -1623,6 +1687,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             
             // 注释
             initializeFilterDates();
+            initHomeCarousel();
             initIntensitySimulator();
             const isLocalDebugHost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
             if (isLocalDebugHost) {

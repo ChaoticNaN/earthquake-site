@@ -50,10 +50,10 @@
         }
         .top-nav {
             max-width: 1400px;
-            margin: 14px auto 0;
+            margin: 12px auto 18px;
             padding: 12px;
             display: flex;
-            gap: 12px;
+            gap: 10px;
             flex-wrap: wrap;
             justify-content: center;
             background: rgba(255, 255, 255, 0.72);
@@ -63,14 +63,20 @@
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
         }
         .nav-btn {
-            border: 1px solid rgba(0, 0, 0, 0.12);
-            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            background: rgba(255, 255, 255, 0.82);
             color: #1a1a1a;
             border-radius: 999px;
-            padding: 10px 16px;
+            padding: 10px 20px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 6px 16px rgba(20, 35, 90, 0.15);
+            transform: translateY(-1px);
         }
         .nav-btn.active {
             background: linear-gradient(135deg, #2f73ff 0%, #4e8fff 100%);
@@ -84,19 +90,101 @@
         }
         .home-view {
             min-height: 45vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
-        .welcome-card {
-            max-width: 860px;
-            text-align: center;
-            padding: 48px 36px;
-            background: rgba(255, 255, 255, 0.78);
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            border-radius: 24px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+
+        .home-shell {
+            max-width: 1220px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.68);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 22px;
+            box-shadow: 0 12px 30px rgba(20, 35, 90, 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 22px;
+        }
+
+        .carousel {
+            position: relative;
+            border-radius: 18px;
+            overflow: hidden;
+            height: 400px;
+            background: #dbeafe;
+        }
+
+        .carousel-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.55s ease;
+        }
+
+        .carousel-slide {
+            min-width: 100%;
+            height: 100%;
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .carousel-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            border: none;
+            background: rgba(15, 23, 42, 0.45);
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 3;
+            backdrop-filter: blur(4px);
+        }
+
+        .carousel-arrow:hover { background: rgba(15, 23, 42, 0.65); }
+        .carousel-arrow.prev { left: 14px; }
+        .carousel-arrow.next { right: 14px; }
+
+        .carousel-dots {
+            position: absolute;
+            left: 50%;
+            bottom: 14px;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 3;
+        }
+
+        .carousel-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.58);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .carousel-dot.active {
+            width: 24px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .home-welcome {
+            margin-top: 16px;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.52);
+            border-radius: 14px;
+            padding: 14px 16px;
+            font-size: 16px;
+            color: #334155;
+            line-height: 1.8;
         }
         .science-card {
             background: rgba(255, 255, 255, 0.84);
@@ -1408,32 +1496,59 @@
             .calendar-months {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
-            .welcome-card {
-                padding: 34px 22px;
+            .top-nav {
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+                overflow-x: auto;
+                scrollbar-width: thin;
+            }
+            .nav-btn {
+                flex: 0 0 auto;
+            }
+            .carousel,
+            .carousel-slide img {
+                height: 260px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🌍 全球地震显示系统 | 真实昼夜模拟</h1>
-        <div class="subtitle">数据来源：USGS | 支持灵活筛选时间范围和震级 | 红点大小=震级 | 光照基于真实世界时间动态变化</div>
-        <div class="time-info" id="realTimeDisplay">🕒 加载时间...</div>
-    </div>
     <nav class="top-nav" id="topNav">
         <button type="button" class="nav-btn" data-view="earthquake-view">地震显示</button>
         <button type="button" class="nav-btn" data-view="calendar-view">地震日历</button>
         <button type="button" class="nav-btn" data-view="richter-view">里氏震级</button>
         <button type="button" class="nav-btn" data-view="moment-view">矩震级</button>
         <button type="button" class="nav-btn" data-view="surface-view">面波震级</button>
-        <button type="button" class="nav-btn" data-view="compare-view">震级标准对比</button>
+        <button type="button" class="nav-btn" data-view="compare-view">震级标准比较</button>
         <button type="button" class="nav-btn" data-view="intensity-view">烈度</button>
     </nav>
 
     <div id="home-view" class="subpage-content home-view">
-        <div class="welcome-card">
-            <h2>全球地震科普平台</h2>
-            <p>聚合全球地震实时数据与震级知识内容，支持按日期与震级筛选、日历查看和多种震级标准对比。请从上方导航进入具体功能页面。</p>
+        <div class="home-shell">
+            <section class="carousel" id="homeCarousel">
+                <div class="carousel-track" id="carouselTrack">
+                    <div class="carousel-slide">
+                        <!-- 可替换为项目内静态资源路径 -->
+                        <img src="/LightShake.png" alt="轻微震感场景">
+                    </div>
+                    <div class="carousel-slide">
+                        <!-- 可替换为项目内静态资源路径 -->
+                        <img src="/ModerateCrack.png" alt="中度破坏场景">
+                    </div>
+                    <div class="carousel-slide">
+                        <!-- 可替换为项目内静态资源路径 -->
+                        <img src="/CollapsedRealm.png" alt="严重倒塌场景">
+                    </div>
+                    <div class="carousel-slide">
+                        <!-- 可替换为项目内静态资源路径 -->
+                        <img src="/TerrainShift.png" alt="地表形变场景">
+                    </div>
+                </div>
+                <button type="button" class="carousel-arrow prev" id="carouselPrev" aria-label="上一张">‹</button>
+                <button type="button" class="carousel-arrow next" id="carouselNext" aria-label="下一张">›</button>
+                <div class="carousel-dots" id="carouselDots"></div>
+            </section>
+            <p class="home-welcome">全球地震科普平台 | 聚合全球地震实时数据与震级知识内容，支持按日期与震级筛选、日历查看和多种震级标准对比。请从导航进入具体功能页面。</p>
         </div>
     </div>
 
@@ -1457,7 +1572,12 @@
         </div>
     </div>
 
-    <div id="earthquake-view" style="display:none;">
+    <div id="earthquake-view" class="subpage-content" style="display:none;">
+    <div class="header">
+        <h1>🌍 全球地震显示系统 | 真实昼夜模拟</h1>
+        <div class="subtitle">数据来源：USGS | 支持灵活筛选时间范围和震级 | 红点大小=震级 | 光照基于真实世界时间动态变化</div>
+        <div class="time-info" id="realTimeDisplay">🕒 加载时间...</div>
+    </div>
     <div class="maps-container">
         <div class="globe-box" id="globeContainer">
             <div class="map-label">🌐 3D 球形地球 (动态日照·真实昼夜)</div>
