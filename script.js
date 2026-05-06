@@ -526,6 +526,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         }
 
         window.updateMercatorMarkers = updateMercatorMarkers;
+        window.drawBaseMap = drawBaseMap;
     
 
         function formatDate(date) {
@@ -562,6 +563,64 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         let calendarDataMap = new Map();
         const CALENDAR_CLICK_MIN_MAG = 5;
         const CALENDAR_CLICK_MAX_MAG = Infinity;
+        const ALL_VIEWS = ['home-view', 'earthquake-view', 'calendar-view', 'richter-view', 'moment-view', 'surface-view', 'compare-view', 'intensity-view'];
+
+        function showView(viewId) {
+            ALL_VIEWS.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = id === viewId ? '' : 'none';
+            });
+
+            document.querySelectorAll('.nav-btn[data-view]').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-view') === viewId);
+            });
+
+            const magInfo = document.querySelector('.magnitude-info');
+            const magDetailed = document.querySelector('.magnitude-detailed');
+            const compareView = document.getElementById('compare-view');
+            if (compareView && magInfo && magDetailed && viewId === 'compare-view') {
+                if (!compareView.contains(magInfo)) compareView.prepend(magInfo);
+                if (!compareView.contains(magDetailed)) compareView.insertBefore(magDetailed, compareView.querySelector('.back-home-wrap'));
+                magInfo.style.display = '';
+                magDetailed.style.display = '';
+            } else if (viewId === 'earthquake-view') {
+                const quakeSection = document.querySelector('#earthquake-view .data-section');
+                if (quakeSection && magInfo && magDetailed) {
+                    if (!quakeSection.contains(magInfo)) quakeSection.insertBefore(magInfo, quakeSection.querySelector('.quake-list'));
+                    if (!quakeSection.contains(magDetailed)) quakeSection.insertBefore(magDetailed, quakeSection.querySelector('.quake-list'));
+                }
+                if (magInfo) magInfo.style.display = 'none';
+                if (magDetailed) magDetailed.style.display = 'none';
+            }
+
+            if (viewId === 'earthquake-view') {
+                requestAnimationFrame(() => {
+                    window.dispatchEvent(new Event('resize'));
+                    if (window.drawBaseMap) window.drawBaseMap();
+                });
+            }
+        }
+
+        async function filterEarthquakesByDate(utcDate) {
+            const dateText = String(utcDate || '').slice(0, 10);
+            if (!dateText) return;
+            const startEl = document.getElementById('filterStartDate');
+            const endEl = document.getElementById('filterEndDate');
+            const minEl = document.getElementById('filterMinMag');
+            const maxEl = document.getElementById('filterMaxMag');
+            if (startEl) startEl.value = dateText;
+            if (endEl) endEl.value = dateText;
+            if (minEl) minEl.value = String(CALENDAR_CLICK_MIN_MAG);
+            if (maxEl) maxEl.value = '';
+            lastFilterParams = {
+                startDate: dateText,
+                endDate: dateText,
+                minMag: CALENDAR_CLICK_MIN_MAG,
+                maxMag: CALENDAR_CLICK_MAX_MAG,
+                timezone: 'Asia/Shanghai'
+            };
+            await loadEarthquakesWithFilter(dateText, dateText, CALENDAR_CLICK_MIN_MAG, CALENDAR_CLICK_MAX_MAG, 2000, 'Asia/Shanghai');
+        }
 
         function getSortValue(quake, field) {
             if (field === 'time') return Number(quake?.properties?.time || 0);
@@ -692,17 +751,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                     cell.className = 'calendar-day';
                     cell.style.background = getCalendarColor(item.maxMag, item.count);
                     cell.title = `日期: ${dateText} (北京时间)\n最大震级: ${maxMagText}\n5级以上次数: ${item.count}`;
-                    cell.addEventListener('click', () => {
-                        document.getElementById('filterStartDate').value = dateText;
-                        document.getElementById('filterEndDate').value = dateText;
-                        lastFilterParams = {
-                            startDate: dateText,
-                            endDate: dateText,
-                            minMag: CALENDAR_CLICK_MIN_MAG,
-                            maxMag: CALENDAR_CLICK_MAX_MAG,
-                            timezone: 'Asia/Shanghai'
-                        };
-                        loadEarthquakesWithFilter(dateText, dateText, CALENDAR_CLICK_MIN_MAG, CALENDAR_CLICK_MAX_MAG, 2000, 'Asia/Shanghai');
+                    cell.addEventListener('click', async () => {
+                        showView('earthquake-view');
+                        await filterEarthquakesByDate(dateText);
                     });
                     grid.appendChild(cell);
                 }
@@ -1492,9 +1543,63 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             filterEarthquakes();
         }
 
+        function initIntensitySimulator() {
+            const magInput = document.getElementById('simMagnitude');
+            const depthInput = document.getElementById('simDepth');
+            const magValueEl = document.getElementById('simMagnitudeValue');
+            const depthValueEl = document.getElementById('simDepthValue');
+            const rangeEl = document.getElementById('simIntensityRange');
+            const descEl = document.getElementById('simIntensityDesc');
+            const meterEl = document.getElementById('simIntensityMeter');
+            const relationMeterEl = document.getElementById('intensityRelationMeter');
+            if (!magInput || !depthInput || !magValueEl || !depthValueEl || !rangeEl || !descEl || !meterEl) return;
+
+            const intensityRoman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+            const toRoman = (level) => intensityRoman[Math.min(11, Math.max(0, Math.round(level) - 1))];
+
+            const update = () => {
+                const mag = parseFloat(magInput.value);
+                const depth = parseFloat(depthInput.value);
+                magValueEl.textContent = mag.toFixed(1);
+                depthValueEl.textContent = String(Math.round(depth));
+
+                let score = 1.55 * mag - 0.012 * depth - 2.1;
+                score = Math.max(1, Math.min(12, score));
+                const low = Math.max(1, Math.floor(score));
+                const high = Math.min(12, Math.ceil(score + 0.8));
+
+                rangeEl.textContent = `${toRoman(low)} ~ ${toRoman(high)}`;
+                meterEl.style.setProperty('--level', ((low + high) / 2).toFixed(2));
+                if (relationMeterEl) relationMeterEl.style.setProperty('--level', ((low + high) / 2).toFixed(2));
+
+                if (high <= 4) {
+                    descEl.textContent = '多为轻微震感，通常不造成结构破坏。';
+                } else if (high <= 6) {
+                    descEl.textContent = '多数人明显有感，老旧或脆弱建筑可能轻度受损。';
+                } else if (high <= 8) {
+                    descEl.textContent = '近场可出现中等到较重破坏，需重点防范次生灾害。';
+                } else if (high <= 10) {
+                    descEl.textContent = '可能造成严重破坏，基础设施受损风险高。';
+                } else {
+                    descEl.textContent = '接近毁灭性影响区间，地表与建筑均可能遭受重创。';
+                }
+            };
+
+            magInput.addEventListener('input', update);
+            depthInput.addEventListener('input', update);
+            update();
+        }
+
         // 注释
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, binding events');
+            document.querySelectorAll('.nav-btn[data-view]').forEach(btn => {
+                btn.addEventListener('click', () => showView(btn.getAttribute('data-view')));
+            });
+            document.querySelectorAll('.back-home-btn').forEach(btn => {
+                btn.addEventListener('click', () => showView('home-view'));
+            });
+            showView('home-view');
             document.getElementById('filterApplyBtn').addEventListener('click', filterEarthquakes);
             document.getElementById('filterResetBtn').addEventListener('click', resetFilter);
             document.getElementById('domesticOnlyToggle')?.addEventListener('change', rerenderByCurrentToggle);
@@ -1518,6 +1623,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             
             // 注释
             initializeFilterDates();
+            initIntensitySimulator();
             const isLocalDebugHost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
             if (isLocalDebugHost) {
                 runChinaDomainRegressionChecks();
@@ -1567,6 +1673,8 @@ window.copyPlace = copyPlace;
 window.locateQuake = locateQuake;
 window.retryLastFilterLoad = retryLastFilterLoad;
 window.retryInitialLoad = retryInitialLoad;
+window.showView = showView;
+window.filterEarthquakesByDate = filterEarthquakesByDate;
 
 
 

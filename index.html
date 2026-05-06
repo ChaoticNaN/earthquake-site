@@ -48,6 +48,71 @@
             color: #333333;
             border: 1px solid rgba(0, 0, 0, 0.1);
         }
+        .top-nav {
+            max-width: 1400px;
+            margin: 14px auto 0;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+        .nav-btn {
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            background: rgba(255, 255, 255, 0.9);
+            color: #1a1a1a;
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .nav-btn.active {
+            background: linear-gradient(135deg, #2f73ff 0%, #4e8fff 100%);
+            color: #fff;
+            border-color: transparent;
+        }
+        .subpage-content {
+            max-width: 1400px;
+            margin: 20px auto 48px;
+            padding: 0 20px 32px;
+        }
+        .home-view {
+            min-height: 45vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .welcome-card {
+            max-width: 860px;
+            text-align: center;
+            padding: 48px 36px;
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 24px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+        }
+        .science-card {
+            background: rgba(255, 255, 255, 0.84);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+            line-height: 1.8;
+            color: #2d3a53;
+        }
+        .back-home-wrap {
+            margin-top: 24px;
+            display: flex;
+            justify-content: center;
+        }
         .maps-container {
             display: flex;
             height: 500px;
@@ -434,9 +499,8 @@
 
         .calendar-months {
             display: grid;
-            grid-template-columns: repeat(12, minmax(130px, 1fr));
+            grid-template-columns: repeat(6, minmax(0, 1fr));
             gap: 12px;
-            min-width: 1560px;
             padding-bottom: 4px;
         }
 
@@ -683,6 +747,193 @@
             margin: 8px 0 0 0;
             font-size: 13px;
             line-height: 1.5;
+        }
+
+        .edu-grid {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .edu-card {
+            grid-column: span 6;
+            background: rgba(255, 255, 255, 0.76);
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            border-radius: 16px;
+            padding: 16px 18px;
+            box-shadow: 0 8px 24px rgba(20, 35, 90, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .edu-card.full { grid-column: 1 / -1; }
+        .edu-card h4 { margin: 0 0 10px; font-size: 18px; color: #1d4ed8; }
+        .edu-card p, .edu-card li { margin: 0 0 8px; color: #334155; font-size: 15px; line-height: 1.75; }
+        .edu-card ul { margin: 0; padding-left: 20px; }
+        .formula-highlight {
+            display: inline-block;
+            background: rgba(255, 243, 199, 0.95);
+            border: 1px solid rgba(250, 204, 21, 0.45);
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-family: "Consolas", "Courier New", monospace;
+            color: #7c2d12;
+            font-weight: 600;
+        }
+
+        .scale-bar {
+            position: relative;
+            height: 16px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #22c55e 0%, #facc15 48%, #f97316 70%, #ef4444 100%);
+            overflow: hidden;
+            margin: 12px 0 8px;
+        }
+
+        .scale-markers {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            font-size: 12px;
+            color: #475569;
+        }
+
+        .energy-bars {
+            display: grid;
+            gap: 10px;
+        }
+
+        .energy-row {
+            display: grid;
+            grid-template-columns: 92px 1fr 160px;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .energy-bar {
+            height: 14px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #60a5fa, #2563eb);
+        }
+
+        .energy-value {
+            font-size: 13px;
+            color: #475569;
+            text-align: right;
+        }
+
+        .rupture-demo {
+            position: relative;
+            min-height: 180px;
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(191, 219, 254, 0.36), rgba(219, 234, 254, 0.2));
+            overflow: hidden;
+        }
+
+        .fault-block {
+            position: absolute;
+            bottom: 20px;
+            left: 10%;
+            height: 16px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #dc2626, #fb7185);
+            animation: ruptureGrow 4.2s ease-in-out infinite;
+        }
+
+        .surface-wave-demo {
+            height: 160px;
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(219, 234, 254, 0.7), rgba(186, 230, 253, 0.35));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wave-line {
+            position: absolute;
+            left: -30%;
+            width: 160%;
+            height: 60px;
+            border-top: 4px solid rgba(37, 99, 235, 0.8);
+            border-radius: 50%;
+            animation: waveMove 4s linear infinite;
+        }
+
+        .wave-line.w2 { top: 76px; animation-delay: 1s; opacity: 0.7; }
+        .wave-line.w1 { top: 40px; }
+
+        .intensity-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .intensity-item {
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .intensity-item strong { color: #b91c1c; }
+
+        .intensity-meter {
+            --level: 6;
+            height: 16px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #22c55e 0%, #f59e0b 60%, #dc2626 100%);
+            position: relative;
+            margin-top: 8px;
+        }
+
+        .intensity-meter::after {
+            content: "";
+            position: absolute;
+            top: -3px;
+            left: calc((var(--level) / 12) * 100%);
+            width: 4px;
+            height: 22px;
+            background: #111827;
+            border-radius: 4px;
+            transform: translateX(-50%);
+        }
+
+        .factor-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .factor-pills span {
+            background: rgba(59, 130, 246, 0.14);
+            color: #1d4ed8;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .intensity-sim {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .sim-controls label { font-size: 13px; color: #475569; display: block; margin-bottom: 6px; }
+        .sim-controls input[type="range"] { width: 100%; }
+        .sim-output { background: rgba(254, 242, 242, 0.9); border: 1px solid rgba(248, 113, 113, 0.45); border-radius: 12px; padding: 10px; }
+        .sim-output p { margin: 6px 0; }
+
+        @keyframes ruptureGrow {
+            0% { width: 20%; }
+            55% { width: 75%; }
+            100% { width: 30%; }
+        }
+
+        @keyframes waveMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(18%); }
         }
 
         /* 地震详情弹窗样式 */
@@ -1020,6 +1271,11 @@
         }
 
         @media (max-width: 768px) {
+            .edu-card { grid-column: 1 / -1; }
+            .energy-row { grid-template-columns: 68px 1fr; }
+            .energy-value { grid-column: 1 / -1; text-align: left; }
+            .intensity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .intensity-sim { grid-template-columns: 1fr; }
             .maps-container {
                 flex-direction: column;
                 height: auto !important;
@@ -1063,8 +1319,7 @@
             }
 
             .calendar-months {
-                grid-template-columns: repeat(12, minmax(110px, 1fr));
-                min-width: 1360px;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
             }
 
             .stats {
@@ -1149,6 +1404,14 @@
                 display: none;
             }
         }
+        @media (max-width: 680px) {
+            .calendar-months {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .welcome-card {
+                padding: 34px 22px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1157,6 +1420,24 @@
         <div class="subtitle">数据来源：USGS | 支持灵活筛选时间范围和震级 | 红点大小=震级 | 光照基于真实世界时间动态变化</div>
         <div class="time-info" id="realTimeDisplay">🕒 加载时间...</div>
     </div>
+    <nav class="top-nav" id="topNav">
+        <button type="button" class="nav-btn" data-view="earthquake-view">地震显示</button>
+        <button type="button" class="nav-btn" data-view="calendar-view">地震日历</button>
+        <button type="button" class="nav-btn" data-view="richter-view">里氏震级</button>
+        <button type="button" class="nav-btn" data-view="moment-view">矩震级</button>
+        <button type="button" class="nav-btn" data-view="surface-view">面波震级</button>
+        <button type="button" class="nav-btn" data-view="compare-view">震级标准对比</button>
+        <button type="button" class="nav-btn" data-view="intensity-view">烈度</button>
+    </nav>
+
+    <div id="home-view" class="subpage-content home-view">
+        <div class="welcome-card">
+            <h2>全球地震科普平台</h2>
+            <p>聚合全球地震实时数据与震级知识内容，支持按日期与震级筛选、日历查看和多种震级标准对比。请从上方导航进入具体功能页面。</p>
+        </div>
+    </div>
+
+    <div id="calendar-view" class="subpage-content" style="display:none;">
     <div class="calendar-panel">
             <div class="calendar-header">
                 <div class="calendar-title">地震日历</div>
@@ -1171,7 +1452,12 @@
                 <div id="calendarContainer" class="calendar-months"></div>
             </div>
         </div>
+        <div class="back-home-wrap">
+            <button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button>
+        </div>
+    </div>
 
+    <div id="earthquake-view" style="display:none;">
     <div class="maps-container">
         <div class="globe-box" id="globeContainer">
             <div class="map-label">🌐 3D 球形地球 (动态日照·真实昼夜)</div>
@@ -1347,6 +1633,163 @@
                 </tbody>
             </table>
         </div>
+        <div class="back-home-wrap">
+            <button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button>
+        </div>
+    </div>
+    </div>
+
+    <div id="richter-view" class="subpage-content" style="display:none;">
+        <div class="science-card">
+            <h3>📏 里氏震级（ML）科普</h3>
+            <div class="edu-grid">
+                <article class="edu-card">
+                    <h4>📐 计算思想</h4>
+                    <p>里氏震级基于地震仪记录的最大振幅，并进行距离校正，核心可写作：</p>
+                    <p><span class="formula-highlight">ML = log10(A) - log10(A0) + 距离校正</span></p>
+                    <p>A 是观测振幅，A0 为标准振幅参考。它本质是“振幅对数标尺”。</p>
+                </article>
+                <article class="edu-card">
+                    <h4>⚡ 震级与能量关系</h4>
+                    <p><span class="formula-highlight">log10(E) = 4.8 + 1.5M</span>（E 单位常取焦耳）</p>
+                    <p>每增加 1 级，能量约增加 31.6 倍。</p>
+                    <p>典型 TNT 当量：M3≈1 吨，M5≈477 吨，M7≈477 万吨。</p>
+                </article>
+                <article class="edu-card full">
+                    <h4>📊 模拟震级刻度尺（能量与破坏）</h4>
+                    <div class="scale-bar"></div>
+                    <div class="scale-markers">
+                        <span>M2 微震</span><span>M3 可感</span><span>M4 小破坏</span><span>M5 中等破坏</span><span>M6 强震</span><span>M7+ 严重破坏</span>
+                    </div>
+                    <div class="energy-bars">
+                        <div class="energy-row"><strong>M3</strong><div class="energy-bar" style="width:8%"></div><span class="energy-value">约 1 吨 TNT</span></div>
+                        <div class="energy-row"><strong>M5</strong><div class="energy-bar" style="width:38%"></div><span class="energy-value">约 477 吨 TNT</span></div>
+                        <div class="energy-row"><strong>M7</strong><div class="energy-bar" style="width:100%"></div><span class="energy-value">约 477 万吨 TNT</span></div>
+                    </div>
+                </article>
+                <article class="edu-card">
+                    <h4>🧭 适用范围与饱和</h4>
+                    <p>ML 对中小地震（约 M2~M6.8）较实用，但在大震时会“饱和”，即振幅增长跟不上实际能量增长，导致高震级被低估。</p>
+                </article>
+                <article class="edu-card">
+                    <h4>📚 历史示例</h4>
+                    <p>1960 年智利大地震最初报告约 8.3（传统振幅震级），后以矩震级修订为 <strong>Mw9.5</strong>。这说明饱和会显著低估超大地震。</p>
+                </article>
+            </div>
+        </div>
+        <div class="back-home-wrap"><button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button></div>
+    </div>
+
+    <div id="moment-view" class="subpage-content" style="display:none;">
+        <div class="science-card">
+            <h3>🌍 矩震级（Mw）科普</h3>
+            <div class="edu-grid">
+                <article class="edu-card">
+                    <h4>🔧 地震矩的物理含义</h4>
+                    <p><span class="formula-highlight">M₀ = μ × A × D</span></p>
+                    <p>μ：剪切模量（岩石刚度）；A：断层破裂面积；D：平均滑移量。三者共同描述“断层做了多少力学功”。</p>
+                </article>
+                <article class="edu-card">
+                    <h4>🧮 Mw 计算公式</h4>
+                    <p><span class="formula-highlight">Mw = (2/3) log10(M₀) - 6.07</span></p>
+                    <p>M₀ 常以牛·米计。公式把“物理量”映射成便于公众理解的震级数值。</p>
+                </article>
+                <article class="edu-card full">
+                    <h4>🎞️ 动态示意：破裂面积变化</h4>
+                    <div class="rupture-demo">
+                        <div class="fault-block"></div>
+                    </div>
+                    <p>动画表示：当破裂面积 A 扩大、滑移量 D 增大时，M₀ 快速提升，因此 Mw 对大地震不易饱和。</p>
+                </article>
+            </div>
+        </div>
+        <div class="back-home-wrap"><button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button></div>
+    </div>
+
+    <div id="surface-view" class="subpage-content" style="display:none;">
+        <div class="science-card">
+            <h3>🌊 面波震级（Ms）科普</h3>
+            <div class="edu-grid">
+                <article class="edu-card">
+                    <h4>📏 定义</h4>
+                    <p>Ms 主要测量 <strong>20±2 秒周期</strong>面波振幅，是传统强震快速评估方法之一。</p>
+                </article>
+                <article class="edu-card">
+                    <h4>🧭 适用范围</h4>
+                    <p>常用于震中距约 <strong>20°~160°</strong> 的浅源大地震。对区域台网和历史目录兼容性较好。</p>
+                </article>
+                <article class="edu-card">
+                    <h4>🔁 与 Mw 的经验换算</h4>
+                    <p><span class="formula-highlight">Mw ≈ 0.67 × Ms + 2.07</span></p>
+                    <p>该关系是统计经验，不同区域可能有偏差。</p>
+                </article>
+                <article class="edu-card">
+                    <h4>⚠️ 局限性</h4>
+                    <p>对深源地震不敏感，且在超大浅源地震存在一定饱和。示例：1994 年玻利维亚深源地震，Ms 明显小于 Mw。</p>
+                </article>
+                <article class="edu-card full">
+                    <h4>📡 面波传播示意</h4>
+                    <div class="surface-wave-demo">
+                        <div class="wave-line w1"></div>
+                        <div class="wave-line w2"></div>
+                    </div>
+                </article>
+            </div>
+        </div>
+        <div class="back-home-wrap"><button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button></div>
+    </div>
+
+    <div id="compare-view" class="subpage-content" style="display:none;">
+        <div class="back-home-wrap"><button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button></div>
+    </div>
+
+    <div id="intensity-view" class="subpage-content" style="display:none;">
+        <div class="science-card">
+            <h3>🏚️ 地震烈度科普</h3>
+            <div class="edu-grid">
+                <article class="edu-card full">
+                    <h4>🗂️ 烈度等级（I ~ XII，简版）</h4>
+                    <div class="intensity-grid">
+                        <div class="intensity-item"><strong>I-II</strong><p>仅仪器记录，人体无感。</p></div>
+                        <div class="intensity-item"><strong>III-IV</strong><p>室内少数人有感，悬挂物轻微摆动。</p></div>
+                        <div class="intensity-item"><strong>V-VI</strong><p>多数人明显有感，个别脆弱建筑轻损。</p></div>
+                        <div class="intensity-item"><strong>VII</strong><p>站立困难，普通房屋可见裂缝。</p></div>
+                        <div class="intensity-item"><strong>VIII</strong><p>建筑中等破坏，烟囱倒塌增多。</p></div>
+                        <div class="intensity-item"><strong>IX</strong><p>房屋严重破坏，地面出现裂缝。</p></div>
+                        <div class="intensity-item"><strong>X-XI</strong><p>大范围毁坏，地表形变明显。</p></div>
+                        <div class="intensity-item"><strong>XII</strong><p>毁灭性破坏，地貌发生显著变化。</p></div>
+                    </div>
+                </article>
+                <article class="edu-card">
+                    <h4>📉 震级 vs 烈度</h4>
+                    <p>同一震级下，浅源地震通常比深源地震造成更高烈度；软土场地比基岩场地震感更强。</p>
+                    <div class="intensity-meter" id="intensityRelationMeter" style="--level:7;"></div>
+                </article>
+                <article class="edu-card">
+                    <h4>🧩 影响因素</h4>
+                    <div class="factor-pills">
+                        <span>震源深度</span><span>震中距</span><span>场地条件</span><span>建筑结构</span><span>施工质量</span><span>局部地形</span>
+                    </div>
+                </article>
+                <article class="edu-card full">
+                    <h4>🎛️ 交互估算器（概念演示）</h4>
+                    <div class="intensity-sim">
+                        <div class="sim-controls">
+                            <label for="simMagnitude">震级 Mw：<span id="simMagnitudeValue">6.5</span></label>
+                            <input id="simMagnitude" type="range" min="3" max="9" step="0.1" value="6.5">
+                            <label for="simDepth">震源深度（km）：<span id="simDepthValue">20</span></label>
+                            <input id="simDepth" type="range" min="5" max="300" step="1" value="20">
+                        </div>
+                        <div class="sim-output">
+                            <p><strong>估算烈度范围：</strong><span id="simIntensityRange">VII ~ VIII</span></p>
+                            <p id="simIntensityDesc">浅源中强震，近场可能造成中等到较重破坏。</p>
+                            <div class="intensity-meter" id="simIntensityMeter" style="--level:7.5;"></div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+        <div class="back-home-wrap"><button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button></div>
     </div>
 
     <script type="importmap">
