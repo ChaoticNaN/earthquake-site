@@ -894,22 +894,62 @@
             text-align: right;
         }
 
-        .rupture-demo {
-            position: relative;
-            min-height: 180px;
+        .moment-lab {
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(148, 163, 184, 0.28);
             border-radius: 14px;
-            background: linear-gradient(180deg, rgba(191, 219, 254, 0.36), rgba(219, 234, 254, 0.2));
-            overflow: hidden;
+            padding: 14px;
+            box-shadow: 0 8px 20px rgba(20, 35, 90, 0.1);
         }
 
-        .fault-block {
-            position: absolute;
-            bottom: 20px;
-            left: 10%;
-            height: 16px;
-            border-radius: 999px;
-            background: linear-gradient(90deg, #dc2626, #fb7185);
-            animation: ruptureGrow 4.2s ease-in-out infinite;
+        .moment-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .moment-control label {
+            display: block;
+            font-size: 13px;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        .moment-control input[type="range"] { width: 100%; }
+
+        .moment-value {
+            font-size: 14px;
+            color: #0f172a;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .moment-output {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .moment-output-box {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .moment-output-box strong {
+            display: block;
+            color: #334155;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .moment-output-box span {
+            color: #b91c1c;
+            font-weight: 700;
+            font-family: "Consolas", "Courier New", monospace;
         }
 
         .surface-wave-demo {
@@ -996,12 +1036,6 @@
         .sim-controls input[type="range"] { width: 100%; }
         .sim-output { background: rgba(254, 242, 242, 0.9); border: 1px solid rgba(248, 113, 113, 0.45); border-radius: 12px; padding: 10px; }
         .sim-output p { margin: 6px 0; }
-
-        @keyframes ruptureGrow {
-            0% { width: 20%; }
-            55% { width: 75%; }
-            100% { width: 30%; }
-        }
 
         @keyframes waveMove {
             0% { transform: translateX(0); }
@@ -1348,6 +1382,8 @@
             .energy-value { grid-column: 1 / -1; text-align: left; }
             .intensity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .intensity-sim { grid-template-columns: 1fr; }
+            .moment-controls,
+            .moment-output { grid-template-columns: 1fr; }
             .maps-container {
                 flex-direction: column;
                 height: auto !important;
@@ -1770,11 +1806,39 @@
                     <p>M₀ 常以牛·米计。公式把“物理量”映射成便于公众理解的震级数值。</p>
                 </article>
                 <article class="edu-card full">
-                    <h4>🎞️ 动态示意：破裂面积变化</h4>
-                    <div class="rupture-demo">
-                        <div class="fault-block"></div>
+                    <h4>🎛️ 交互实验：A 与 D 如何影响 Mw</h4>
+                    <div class="moment-lab">
+                        <div class="moment-controls">
+                            <div class="moment-control">
+                                <label for="momentAreaRange">破裂面积 A（km²）</label>
+                                <input id="momentAreaRange" type="range" min="0" max="100" step="1" value="50">
+                                <div class="moment-value" id="momentAreaValue">1000 km²</div>
+                            </div>
+                            <div class="moment-control">
+                                <label for="momentSlipRange">平均滑移量 D（m）</label>
+                                <input id="momentSlipRange" type="range" min="0" max="100" step="1" value="50">
+                                <div class="moment-value" id="momentSlipValue">1.00 m</div>
+                            </div>
+                        </div>
+                        <div class="moment-output">
+                            <div class="moment-output-box">
+                                <strong>地震矩 M₀（N·m）</strong>
+                                <span id="momentM0Value">-</span>
+                            </div>
+                            <div class="moment-output-box">
+                                <strong>矩震级 Mw</strong>
+                                <span id="momentMwValue">-</span>
+                            </div>
+                        </div>
+                        <div class="detailed-highlight" style="margin-top:10px;">
+                            3.0 ≤ M &lt; 4.5 有感地震：人们能够感觉到，但通常不会造成破坏。<br/>
+                            4.5 ≤ M &lt; 6.0 中强震：属于可造成破坏的地震，具体破坏程度与震源深度、震中距等多种因素有关。<br/>
+                            6.0 ≤ M &lt; 7.0 强震：具有较大破坏性，可能造成严重损失。<br/>
+                            7.0 ≤ M &lt; 8.0 大地震：能造成严重破坏，并对大范围区域产生影响。<br/>
+                            M ≥ 8.0 巨大地震：具有毁灭性的破坏力，能量极其巨大。
+                        </div>
                     </div>
-                    <p>动画表示：当破裂面积 A 扩大、滑移量 D 增大时，M₀ 快速提升，因此 Mw 对大地震不易饱和。</p>
+                    <p>拖动滑块可实时观察：A（破裂面积）增大或 D（滑移量）增大时，地震矩 M₀ 与 Mw 会同步升高。</p>
                 </article>
             </div>
         </div>

@@ -1601,6 +1601,62 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             update();
         }
 
+        function initMomentMagnitudeLab() {
+            const areaRange = document.getElementById('momentAreaRange');
+            const slipRange = document.getElementById('momentSlipRange');
+            const areaValue = document.getElementById('momentAreaValue');
+            const slipValue = document.getElementById('momentSlipValue');
+            const m0Value = document.getElementById('momentM0Value');
+            const mwValue = document.getElementById('momentMwValue');
+            if (!areaRange || !slipRange || !areaValue || !slipValue || !m0Value || !mwValue) return;
+
+            const MU = 3e10; // N/m²
+            const AREA_LOG_MIN = 0;   // 10^0 = 1 km²
+            const AREA_LOG_MAX = 6;   // 10^6 = 1,000,000 km²
+            const SLIP_LOG_MIN = -2;  // 10^-2 = 0.01 m
+            const SLIP_LOG_MAX = 2;   // 10^2  = 100 m
+
+            const sliderToLogValue = (sliderValue, logMin, logMax) => {
+                const t = Math.max(0, Math.min(100, Number(sliderValue))) / 100;
+                return Math.pow(10, logMin + (logMax - logMin) * t);
+            };
+
+            const valueToSlider = (actualValue, logMin, logMax) => {
+                const safe = Math.max(Math.pow(10, logMin), Math.min(Math.pow(10, logMax), Number(actualValue)));
+                const logV = Math.log10(safe);
+                return ((logV - logMin) / (logMax - logMin)) * 100;
+            };
+
+            const formatArea = (v) => {
+                if (v >= 1000) return `${v.toLocaleString('en-US', { maximumFractionDigits: 0 })} km²`;
+                if (v >= 100) return `${v.toFixed(1)} km²`;
+                return `${v.toPrecision(3)} km²`;
+            };
+
+            const formatSlip = (v) => `${v.toFixed(2)} m`;
+
+            const update = () => {
+                const areaKm2 = sliderToLogValue(areaRange.value, AREA_LOG_MIN, AREA_LOG_MAX);
+                const slipM = sliderToLogValue(slipRange.value, SLIP_LOG_MIN, SLIP_LOG_MAX);
+                const areaM2 = areaKm2 * 1e6;
+                const m0 = MU * areaM2 * slipM;
+                const mw = (2 / 3) * Math.log10(m0) - 6.07;
+
+                areaValue.textContent = formatArea(areaKm2);
+                slipValue.textContent = formatSlip(slipM);
+                m0Value.textContent = m0.toExponential(2);
+                mwValue.textContent = mw.toFixed(1);
+
+            };
+
+            areaRange.addEventListener('input', update);
+            slipRange.addEventListener('input', update);
+            // 默认初始化到 A=1000 km²，D=1 m
+            areaRange.value = String(Math.round(valueToSlider(1000, AREA_LOG_MIN, AREA_LOG_MAX)));
+            slipRange.value = String(Math.round(valueToSlider(1, SLIP_LOG_MIN, SLIP_LOG_MAX)));
+            update();
+        }
+
         function initHomeCarousel() {
             const track = document.getElementById('carouselTrack');
             const prevBtn = document.getElementById('carouselPrev');
@@ -1726,6 +1782,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             initializeFilterDates();
             initHomeCarousel();
             initIntensitySimulator();
+            initMomentMagnitudeLab();
             const isLocalDebugHost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
             if (isLocalDebugHost) {
                 runChinaDomainRegressionChecks();
