@@ -1657,6 +1657,225 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             update();
         }
 
+        function initSurfaceWaveDemo() {
+            const canvas = document.getElementById('surfaceWaveCanvas');
+            const rayleighBtn = document.getElementById('rayleighModeBtn');
+            const loveBtn = document.getElementById('loveModeBtn');
+            const toggleBtn = document.getElementById('surfaceWaveToggleBtn');
+            const noteEl = document.getElementById('surfaceWaveNote');
+            const speedRange = document.getElementById('surfaceWaveSpeed');
+            const dampingRange = document.getElementById('surfaceWaveDamping');
+            const depthRange = document.getElementById('surfaceWaveDepth');
+            if (!canvas || !rayleighBtn || !loveBtn || !toggleBtn || !noteEl || !speedRange || !dampingRange || !depthRange) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            let mode = 'rayleigh';
+            let running = true;
+            const w = canvas.width;
+            const h = canvas.height;
+            const groundY = 108;
+            const left = 52;
+            const right = w - 52;
+            const count = 12;
+            const spacing = (right - left) / (count - 1);
+            const omega = 0.085;
+            const k = 0.6;
+            const points = Array.from({ length: count }, (_, i) => ({ x0: left + i * spacing }));
+
+            let t = 0;
+            let rafId = 0;
+            let lastTs = 0;
+
+            const getSpeed = () => Number(speedRange.value) || 1;
+            const getDamping = () => Number(dampingRange.value) || 1;
+            const getDepth = () => Math.max(86, Number(depthRange.value) || 86);
+
+            const updateButtons = () => {
+                rayleighBtn.classList.toggle('active', mode === 'rayleigh');
+                loveBtn.classList.toggle('active', mode === 'love');
+                noteEl.textContent = mode === 'rayleigh'
+                    ? '瑞利波：质点在地表附近做逆时针椭圆滚动，垂直与水平运动结合。'
+                    : '勒夫波：质点做垂直于传播方向的水平剪切运动，类似扭动。';
+                toggleBtn.textContent = running ? '暂停' : '播放';
+            };
+
+            const drawArrow = (x, y, vxNow, vyNow) => {
+                const speed = Math.hypot(vxNow, vyNow);
+                if (speed < 0.01) return;
+                const scale = 10 / speed;
+                const dx = vxNow * scale;
+                const dy = vyNow * scale;
+                ctx.strokeStyle = 'rgba(220,38,38,0.9)';
+                ctx.fillStyle = 'rgba(220,38,38,0.9)';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + dx, y + dy);
+                ctx.stroke();
+                const ang = Math.atan2(dy, dx);
+                ctx.beginPath();
+                ctx.moveTo(x + dx, y + dy);
+                ctx.lineTo(x + dx - 4 * Math.cos(ang - 0.5), y + dy - 4 * Math.sin(ang - 0.5));
+                ctx.lineTo(x + dx - 4 * Math.cos(ang + 0.5), y + dy - 4 * Math.sin(ang + 0.5));
+                ctx.closePath();
+                ctx.fill();
+            };
+
+            const draw = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                grad.addColorStop(0, 'rgba(191,219,254,0.55)');
+                grad.addColorStop(1, 'rgba(186,230,253,0.30)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // subsurface zone
+                ctx.fillStyle = 'rgba(148,163,184,0.12)';
+                ctx.fillRect(0, groundY, w, h - groundY);
+
+                // ground dashed line
+                ctx.setLineDash([6, 5]);
+                ctx.strokeStyle = 'rgba(100,116,139,0.9)';
+                ctx.lineWidth = 1.4;
+                ctx.beginPath();
+                ctx.moveTo(0, groundY);
+                ctx.lineTo(w, groundY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // simple buildings on surface
+                const buildings = [
+                    { x: 120, w: 20, h: 28 },
+                    { x: 170, w: 24, h: 36 },
+                    { x: 230, w: 18, h: 24 },
+                    { x: 420, w: 22, h: 32 },
+                    { x: 470, w: 28, h: 44 },
+                    { x: 530, w: 20, h: 30 }
+                ];
+                buildings.forEach((b) => {
+                    ctx.fillStyle = 'rgba(51,65,85,0.72)';
+                    ctx.fillRect(b.x, groundY - b.h, b.w, b.h);
+                    ctx.fillStyle = 'rgba(148,163,184,0.5)';
+                    ctx.fillRect(b.x + 4, groundY - b.h + 6, 3, 3);
+                    ctx.fillRect(b.x + 10, groundY - b.h + 12, 3, 3);
+                });
+
+                const depth = getDepth();
+
+                // source marker at left (deeper underground)
+                ctx.fillStyle = '#b91c1c';
+                ctx.beginPath();
+                ctx.arc(left - 18, groundY + depth, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#7f1d1d';
+                ctx.font = '12px sans-serif';
+                ctx.fillText('震源', left - 32, groundY + depth + 20);
+
+                // particle positions and envelope
+                const pos = [];
+                const speed = getSpeed();
+                const damping = getDamping();
+                const depthAttenuation = Math.max(0.3, 86 / depth); // deeper => smaller amplitude
+                for (let i = 0; i < points.length; i++) {
+                    const p = points[i];
+                    const decay = Math.exp(-(damping * i) / (count - 1));
+                    const phase = omega * speed * t - k * i;
+                    const ax = 10 * decay * depthAttenuation;
+                    const ay = 16 * decay * depthAttenuation;
+                    let dx = 0;
+                    let dy = 0;
+                    let vxNow = 0;
+                    let vyNow = 0;
+
+                    if (mode === 'rayleigh') {
+                        // counterclockwise ellipse in screen coordinates:
+                        // x = sin(theta), y = -cos(theta)
+                        dx = ax * Math.sin(phase);
+                        dy = -ay * Math.cos(phase);
+                        vxNow = ax * omega * speed * Math.cos(phase);
+                        vyNow = ay * omega * speed * Math.sin(phase);
+                    } else {
+                        dx = 16 * decay * Math.sin(phase);
+                        dy = 0;
+                        vxNow = 16 * decay * omega * speed * Math.cos(phase);
+                        vyNow = 0;
+                    }
+
+                    const x = p.x0 + dx;
+                    const y = groundY + 18 + dy;
+                    pos.push({ x, y, vxNow, vyNow });
+                }
+
+                // envelope line
+                ctx.strokeStyle = 'rgba(37,99,235,0.85)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                pos.forEach((p, i) => {
+                    if (i === 0) ctx.moveTo(p.x, p.y);
+                    else ctx.lineTo(p.x, p.y);
+                });
+                ctx.stroke();
+
+                // particles + arrows + track hints for Rayleigh
+                pos.forEach((p, i) => {
+                    if (mode === 'rayleigh') {
+                        const decay = Math.exp(-(damping * i) / (count - 1));
+                        const ax = 10 * decay * depthAttenuation;
+                        const ay = 16 * decay * depthAttenuation;
+                        ctx.strokeStyle = 'rgba(148,163,184,0.35)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.ellipse(points[i].x0, groundY + 18, ax, ay, 0, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+
+                    ctx.fillStyle = '#1e40af';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    drawArrow(p.x, p.y, p.vxNow, p.vyNow);
+                });
+            };
+
+            const animate = (ts) => {
+                if (!running) return;
+                if (!lastTs || ts - lastTs > 30) { // ~33fps, lighter CPU
+                    t += 1;
+                    draw();
+                    lastTs = ts;
+                }
+                rafId = requestAnimationFrame(animate);
+            };
+
+            rayleighBtn.addEventListener('click', () => {
+                mode = 'rayleigh';
+                updateButtons();
+            });
+            loveBtn.addEventListener('click', () => {
+                mode = 'love';
+                updateButtons();
+            });
+            speedRange.addEventListener('input', updateButtons);
+            dampingRange.addEventListener('input', updateButtons);
+            depthRange.addEventListener('input', updateButtons);
+            toggleBtn.addEventListener('click', () => {
+                running = !running;
+                updateButtons();
+                if (running) {
+                    lastTs = 0;
+                    rafId = requestAnimationFrame(animate);
+                } else if (rafId) {
+                    cancelAnimationFrame(rafId);
+                }
+            });
+
+            updateButtons();
+            draw();
+            rafId = requestAnimationFrame(animate);
+        }
+
         function initHomeCarousel() {
             const track = document.getElementById('carouselTrack');
             const prevBtn = document.getElementById('carouselPrev');
@@ -1783,6 +2002,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             initHomeCarousel();
             initIntensitySimulator();
             initMomentMagnitudeLab();
+            initSurfaceWaveDemo();
             const isLocalDebugHost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
             if (isLocalDebugHost) {
                 runChinaDomainRegressionChecks();

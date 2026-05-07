@@ -952,26 +952,75 @@
             font-family: "Consolas", "Courier New", monospace;
         }
 
-        .surface-wave-demo {
-            height: 160px;
+        .surface-wave-panel {
+            background: rgba(255, 255, 255, 0.76);
+            border: 1px solid rgba(148, 163, 184, 0.28);
             border-radius: 14px;
-            background: linear-gradient(180deg, rgba(219, 234, 254, 0.7), rgba(186, 230, 253, 0.35));
-            position: relative;
+            padding: 12px;
+            box-shadow: 0 8px 20px rgba(20, 35, 90, 0.1);
+        }
+
+        .surface-wave-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .surface-wave-sliders {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .surface-wave-slider label {
+            display: block;
+            font-size: 12px;
+            color: #334155;
+            margin-bottom: 4px;
+        }
+
+        .surface-wave-slider input[type="range"] { width: 100%; }
+
+        .surface-wave-btn {
+            border: 1px solid rgba(37, 99, 235, 0.35);
+            background: rgba(59, 130, 246, 0.14);
+            color: #1d4ed8;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .surface-wave-btn.active {
+            background: linear-gradient(135deg, #2563eb, #60a5fa);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .surface-wave-canvas-wrap {
+            border-radius: 12px;
             overflow: hidden;
+            border: 1px solid rgba(125, 150, 190, 0.35);
+            background: linear-gradient(180deg, rgba(219, 234, 254, 0.72), rgba(186, 230, 253, 0.35));
         }
 
-        .wave-line {
-            position: absolute;
-            left: -30%;
-            width: 160%;
-            height: 60px;
-            border-top: 4px solid rgba(37, 99, 235, 0.8);
-            border-radius: 50%;
-            animation: waveMove 4s linear infinite;
+        #surfaceWaveCanvas {
+            width: 100%;
+            height: auto;
+            display: block;
+            aspect-ratio: 2 / 1;
+            max-height: 300px;
         }
 
-        .wave-line.w2 { top: 76px; animation-delay: 1s; opacity: 0.7; }
-        .wave-line.w1 { top: 40px; }
+        .surface-wave-note {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #334155;
+            line-height: 1.7;
+        }
 
         .intensity-grid {
             display: grid;
@@ -1036,11 +1085,6 @@
         .sim-controls input[type="range"] { width: 100%; }
         .sim-output { background: rgba(254, 242, 242, 0.9); border: 1px solid rgba(248, 113, 113, 0.45); border-radius: 12px; padding: 10px; }
         .sim-output p { margin: 6px 0; }
-
-        @keyframes waveMove {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(18%); }
-        }
 
         /* 地震详情弹窗样式 */
         .quake-detail-modal {
@@ -1384,6 +1428,7 @@
             .intensity-sim { grid-template-columns: 1fr; }
             .moment-controls,
             .moment-output { grid-template-columns: 1fr; }
+            .surface-wave-sliders { grid-template-columns: 1fr; }
             .maps-container {
                 flex-direction: column;
                 height: auto !important;
@@ -1868,9 +1913,32 @@
                 </article>
                 <article class="edu-card full">
                     <h4>📡 面波传播示意</h4>
-                    <div class="surface-wave-demo">
-                        <div class="wave-line w1"></div>
-                        <div class="wave-line w2"></div>
+                    <div class="surface-wave-panel">
+                        <div class="surface-wave-controls">
+                            <button type="button" class="surface-wave-btn active" id="rayleighModeBtn">瑞利波模式</button>
+                            <button type="button" class="surface-wave-btn" id="loveModeBtn">勒夫波模式</button>
+                            <button type="button" class="surface-wave-btn" id="surfaceWaveToggleBtn">暂停动画</button>
+                        </div>
+                        <div class="surface-wave-sliders">
+                            <div class="surface-wave-slider">
+                                <label for="surfaceWaveSpeed">传播速度（慢 → 快）</label>
+                                <input id="surfaceWaveSpeed" type="range" min="0.5" max="2.5" step="0.1" value="1.0">
+                            </div>
+                            <div class="surface-wave-slider">
+                                <label for="surfaceWaveDamping">衰减强度（弱 → 强）</label>
+                                <input id="surfaceWaveDamping" type="range" min="0.4" max="2.5" step="0.1" value="1.0">
+                            </div>
+                            <div class="surface-wave-slider">
+                                <label for="surfaceWaveDepth">震源深度（浅 → 深）</label>
+                                <input id="surfaceWaveDepth" type="range" min="86" max="180" step="1" value="86">
+                            </div>
+                        </div>
+                        <div class="surface-wave-canvas-wrap">
+                            <canvas id="surfaceWaveCanvas" width="600" height="300"></canvas>
+                        </div>
+                        <div class="surface-wave-note" id="surfaceWaveNote">
+                            瑞利波：质点做逆椭圆滚动（上下+前后），类似海浪翻滚。红色箭头表示质点瞬时运动方向。
+                        </div>
                     </div>
                 </article>
             </div>
