@@ -843,6 +843,68 @@
         .edu-card h4 { margin: 0 0 10px; font-size: 18px; color: #1d4ed8; }
         .edu-card p, .edu-card li { margin: 0 0 8px; color: #334155; font-size: 15px; line-height: 1.75; }
         .edu-card ul { margin: 0; padding-left: 20px; }
+
+        /* compare-view 视觉语言迁移到四个科普页 */
+        .compare-style .science-card {
+            max-width: 1400px;
+            margin: 24px auto 0;
+            padding: 22px;
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid rgba(255, 255, 255, 0.58);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 10px 26px rgba(20, 35, 90, 0.1);
+        }
+
+        .compare-style .science-card > h3 {
+            color: #1565c0;
+            font-size: 22px;
+            margin-bottom: 14px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .compare-style .edu-grid {
+            gap: 20px;
+        }
+
+        .compare-style .edu-card {
+            background: rgba(245, 249, 255, 0.88);
+            border: 1px solid rgba(144, 202, 249, 0.45);
+            border-left: 4px solid #42a5f5;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(21, 101, 192, 0.08);
+            padding: 18px;
+        }
+
+        .compare-style .edu-card h4 {
+            color: #1565c0;
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .compare-style .edu-card p,
+        .compare-style .edu-card li {
+            color: #2f3d54;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+
+        .compare-style .edu-card.full {
+            background: rgba(255, 244, 231, 0.78);
+            border-color: rgba(255, 183, 77, 0.45);
+            border-left-color: #ffa726;
+        }
+
+        .compare-style .formula-highlight {
+            background: rgba(255, 243, 224, 0.9);
+            border-color: rgba(255, 167, 38, 0.5);
+            color: #e65100;
+        }
         .formula-highlight {
             display: inline-block;
             background: rgba(255, 243, 199, 0.95);
@@ -1795,7 +1857,7 @@
     </div>
     </div>
 
-    <div id="richter-view" class="subpage-content" style="display:none;">
+    <div id="richter-view" class="subpage-content compare-style" style="display:none;">
         <div class="science-card">
             <h3>📏 里氏震级（ML）科普</h3>
             <div class="edu-grid">
@@ -1866,7 +1928,7 @@
         <div class="back-home-wrap"><button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button></div>
     </div>
 
-    <div id="moment-view" class="subpage-content" style="display:none;">
+    <div id="moment-view" class="subpage-content compare-style" style="display:none;">
         <div class="science-card">
             <h3>🌍 矩震级（Mw）科普</h3>
             <div class="edu-grid">
@@ -1940,7 +2002,7 @@
         <div class="back-home-wrap"><button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button></div>
     </div>
 
-    <div id="surface-view" class="subpage-content" style="display:none;">
+    <div id="surface-view" class="subpage-content compare-style" style="display:none;">
         <div class="science-card">
             <h3>🌊 面波震级（Ms）科普</h3>
             <div class="edu-grid">
@@ -2016,7 +2078,7 @@
         <div class="back-home-wrap"><button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button></div>
     </div>
 
-    <div id="intensity-view" class="subpage-content" style="display:none;">
+    <div id="intensity-view" class="subpage-content compare-style" style="display:none;">
         <div class="science-card">
             <h3>🏚️ 地震烈度科普</h3>
             <div class="edu-grid">
