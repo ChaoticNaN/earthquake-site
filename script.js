@@ -564,16 +564,20 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         const CALENDAR_CLICK_MIN_MAG = 5;
         const CALENDAR_CLICK_MAX_MAG = Infinity;
         const ALL_VIEWS = ['home-view', 'earthquake-view', 'calendar-view', 'richter-view', 'moment-view', 'surface-view', 'compare-view', 'intensity-view'];
+        let currentViewId = 'home-view';
+        let homeCarouselController = null;
 
-        function showView(viewId) {
+        function showView(viewId, options = {}) {
+            const allowSubpageTransition = Boolean(options.allowSubpageTransition);
+            if (!allowSubpageTransition && currentViewId !== 'home-view' && viewId !== 'home-view' && viewId !== currentViewId) {
+                return;
+            }
+
             ALL_VIEWS.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = id === viewId ? '' : 'none';
             });
-
-            document.querySelectorAll('.nav-btn[data-view]').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-view') === viewId);
-            });
+            currentViewId = viewId;
 
             const magInfo = document.querySelector('.magnitude-info');
             const magDetailed = document.querySelector('.magnitude-detailed');
@@ -598,6 +602,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                     window.dispatchEvent(new Event('resize'));
                     if (window.drawBaseMap) window.drawBaseMap();
                 });
+            }
+
+            if (homeCarouselController) {
+                if (viewId === 'home-view') homeCarouselController.start();
+                else homeCarouselController.stop();
             }
         }
 
@@ -1599,9 +1608,15 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
             const carouselImages = [
                 { src: '/LightShake.png', alt: '轻微震感场景' },
-                { src: '/ModerateCrack.png', alt: '中度破坏场景' },
-                { src: '/CollapsedRealm.png', alt: '严重倒塌场景' },
-                { src: '/TerrainShift.png', alt: '地表形变场景' }
+                { src: '/MediumShake.png', alt: '中度破坏场景' },
+                { src: '/HeavyShake.png', alt: '严重震害场景' },
+                { src: '/ExtremeShake.png', alt: '极端破坏场景' },
+                { src: '/Image5.png', alt: '轮播图 5' },
+                { src: '/Image6.png', alt: '轮播图 6' },
+                { src: '/Image7.png', alt: '轮播图 7' },
+                { src: '/Image8.png', alt: '轮播图 8' },
+                { src: '/Image9.png', alt: '轮播图 9' },
+                { src: '/Image10.png', alt: '轮播图 10' }
             ];
 
             track.innerHTML = carouselImages.map(item => `
@@ -1609,6 +1624,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                     <img src="${item.src}" alt="${item.alt}">
                 </div>
             `).join('');
+
+            const images = Array.from(track.querySelectorAll('img'));
+            images.forEach((img) => {
+                console.log('[carousel] requesting:', img.src);
+                img.addEventListener('load', () => {
+                    console.log('[carousel] loaded:', img.currentSrc || img.src, `${img.naturalWidth}x${img.naturalHeight}`);
+                });
+                img.addEventListener('error', () => {
+                    console.error('[carousel] failed:', img.src);
+                });
+            });
 
             const slides = Array.from(track.querySelectorAll('.carousel-slide'));
             if (!slides.length) return;
@@ -1634,6 +1660,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 if (timer) clearInterval(timer);
                 timer = setInterval(() => go(index + 1), 5000);
             };
+            const stopAuto = () => {
+                if (!timer) return;
+                clearInterval(timer);
+                timer = null;
+            };
 
             prevBtn.addEventListener('click', () => {
                 go(index - 1);
@@ -1652,12 +1683,16 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
             render();
             restartAuto();
+            homeCarouselController = {
+                start: restartAuto,
+                stop: stopAuto
+            };
         }
 
         // 注释
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, binding events');
-            document.querySelectorAll('.nav-btn[data-view]').forEach(btn => {
+            document.querySelectorAll('.home-menu-btn[data-view]').forEach(btn => {
                 btn.addEventListener('click', () => showView(btn.getAttribute('data-view')));
             });
             document.querySelectorAll('.back-home-btn').forEach(btn => {

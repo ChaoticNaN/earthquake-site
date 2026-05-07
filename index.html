@@ -10,6 +10,9 @@
             padding: 0;
             box-sizing: border-box;
         }
+        html, body {
+            height: 100%;
+        }
         body {
             font-family: system-ui, 'Segoe UI', '微软雅黑', sans-serif;
             background: #ffffff;
@@ -48,68 +51,25 @@
             color: #333333;
             border: 1px solid rgba(0, 0, 0, 0.1);
         }
-        .top-nav {
-            max-width: 1400px;
-            margin: 12px auto 18px;
-            padding: 12px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.72);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            border-radius: 16px;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-        }
-        .nav-btn {
-            border: none;
-            background: rgba(255, 255, 255, 0.82);
-            color: #1a1a1a;
-            border-radius: 999px;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.25s ease;
-        }
-        .nav-btn:hover {
-            background: rgba(255, 255, 255, 0.98);
-            box-shadow: 0 6px 16px rgba(20, 35, 90, 0.15);
-            transform: translateY(-1px);
-        }
-        .nav-btn.active {
-            background: linear-gradient(135deg, #2f73ff 0%, #4e8fff 100%);
-            color: #fff;
-            border-color: transparent;
-        }
         .subpage-content {
             max-width: 1400px;
             margin: 20px auto 48px;
             padding: 0 20px 32px;
         }
         .home-view {
-            min-height: 45vh;
-        }
-
-        .home-shell {
-            max-width: 1220px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.68);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 22px;
-            box-shadow: 0 12px 30px rgba(20, 35, 90, 0.12);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 22px;
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
         }
 
         .carousel {
             position: relative;
-            border-radius: 18px;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            height: 400px;
-            background: #dbeafe;
+            background: transparent;
         }
 
         .carousel-track {
@@ -125,7 +85,7 @@
 
         .carousel-slide img {
             width: 100%;
-            height: 400px;
+            height: 100%;
             object-fit: cover;
             display: block;
         }
@@ -176,15 +136,39 @@
             background: rgba(255, 255, 255, 0.95);
         }
 
-        .home-welcome {
-            margin-top: 16px;
-            background: rgba(255, 255, 255, 0.72);
-            border: 1px solid rgba(255, 255, 255, 0.52);
-            border-radius: 14px;
-            padding: 14px 16px;
-            font-size: 16px;
-            color: #334155;
-            line-height: 1.8;
+        .home-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            width: min(90vw, 320px);
+        }
+
+        .home-menu-btn {
+            width: 260px;
+            height: 60px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .home-menu-btn:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
         }
         .science-card {
             background: rgba(255, 255, 255, 0.84);
@@ -1496,60 +1480,31 @@
             .calendar-months {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
-            .top-nav {
-                flex-wrap: nowrap;
-                justify-content: flex-start;
-                overflow-x: auto;
-                scrollbar-width: thin;
-            }
-            .nav-btn {
-                flex: 0 0 auto;
-            }
-            .carousel,
-            .carousel-slide img {
-                height: 260px;
+            .home-menu-btn {
+                width: min(80vw, 360px);
+                height: 50px;
+                font-size: 18px;
             }
         }
     </style>
 </head>
 <body>
-    <nav class="top-nav" id="topNav">
-        <button type="button" class="nav-btn" data-view="earthquake-view">地震显示</button>
-        <button type="button" class="nav-btn" data-view="calendar-view">地震日历</button>
-        <button type="button" class="nav-btn" data-view="richter-view">里氏震级</button>
-        <button type="button" class="nav-btn" data-view="moment-view">矩震级</button>
-        <button type="button" class="nav-btn" data-view="surface-view">面波震级</button>
-        <button type="button" class="nav-btn" data-view="compare-view">震级标准比较</button>
-        <button type="button" class="nav-btn" data-view="intensity-view">烈度</button>
-    </nav>
-
     <div id="home-view" class="subpage-content home-view">
-        <div class="home-shell">
-            <section class="carousel" id="homeCarousel">
-                <div class="carousel-track" id="carouselTrack">
-                    <div class="carousel-slide">
-                        <!-- 可替换为项目内静态资源路径 -->
-                        <img src="/LightShake.png" alt="轻微震感场景">
-                    </div>
-                    <div class="carousel-slide">
-                        <!-- 可替换为项目内静态资源路径 -->
-                        <img src="/ModerateCrack.png" alt="中度破坏场景">
-                    </div>
-                    <div class="carousel-slide">
-                        <!-- 可替换为项目内静态资源路径 -->
-                        <img src="/CollapsedRealm.png" alt="严重倒塌场景">
-                    </div>
-                    <div class="carousel-slide">
-                        <!-- 可替换为项目内静态资源路径 -->
-                        <img src="/TerrainShift.png" alt="地表形变场景">
-                    </div>
-                </div>
-                <button type="button" class="carousel-arrow prev" id="carouselPrev" aria-label="上一张">‹</button>
-                <button type="button" class="carousel-arrow next" id="carouselNext" aria-label="下一张">›</button>
-                <div class="carousel-dots" id="carouselDots"></div>
-            </section>
-            <p class="home-welcome">全球地震科普平台 | 聚合全球地震实时数据与震级知识内容，支持按日期与震级筛选、日历查看和多种震级标准对比。请从导航进入具体功能页面。</p>
-        </div>
+        <section class="carousel" id="homeCarousel">
+            <div class="carousel-track" id="carouselTrack"></div>
+            <div class="home-menu">
+                <button type="button" class="home-menu-btn" data-view="earthquake-view">地震显示</button>
+                <button type="button" class="home-menu-btn" data-view="calendar-view">地震日历</button>
+                <button type="button" class="home-menu-btn" data-view="richter-view">里氏震级</button>
+                <button type="button" class="home-menu-btn" data-view="moment-view">矩震级</button>
+                <button type="button" class="home-menu-btn" data-view="surface-view">面波震级</button>
+                <button type="button" class="home-menu-btn" data-view="compare-view">震级标准比较</button>
+                <button type="button" class="home-menu-btn" data-view="intensity-view">烈度</button>
+            </div>
+            <button type="button" class="carousel-arrow prev" id="carouselPrev" aria-label="上一张">‹</button>
+            <button type="button" class="carousel-arrow next" id="carouselNext" aria-label="下一张">›</button>
+            <div class="carousel-dots" id="carouselDots"></div>
+        </section>
     </div>
 
     <div id="calendar-view" class="subpage-content" style="display:none;">
