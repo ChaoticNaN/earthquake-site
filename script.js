@@ -250,7 +250,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             const subPoint = getSubSolarPointLatLon();
             const tipDiv = document.getElementById('sunPosTip');
             if (tipDiv) {
-                tipDiv.innerHTML = `☀️ 实时日照 | 直射点 ${formatLatLon(subPoint.lat, subPoint.lon)}<br>🕒 基于 UTC 时间`;
+                // 太阳计算链路中的经度符号与常规地理显示约定相反，这里仅在展示层取反。
+                tipDiv.innerHTML = `☀️ 实时日照 | 直射点 ${formatLatLon(subPoint.lat, -subPoint.lon)}<br>🕒 基于 UTC 时间`;
             }
         }
         // 注释
@@ -260,7 +261,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             const sub = getSubSolarPointLatLon();
             const el = document.getElementById('realTimeDisplay');
             if (el) {
-                el.innerHTML = `🕒 ${utcStr} | ☀️ 太阳直射: ${formatLatLon(sub.lat, sub.lon)}`;
+                // 同上：显示用经度与光照计算用经度做符号转换，保证 E/W 与视觉一致。
+                el.innerHTML = `🕒 ${utcStr} | ☀️ 太阳直射: ${formatLatLon(sub.lat, -sub.lon)}`;
             }
         }
         
