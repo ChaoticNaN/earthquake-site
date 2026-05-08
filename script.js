@@ -44,10 +44,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         scene.add(stars);
         
         const textureLoader = new THREE.TextureLoader();
-        const earthMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
-        const earthSpecularMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_specular_2048.jpg');
-        const earthNormalMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_normal_2048.jpg');
-        const cloudMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_clouds_1024.png');
+        const earthMap = textureLoader.load('./assets/textures/earth_atmos_2048.jpg');
+        const earthSpecularMap = textureLoader.load('./assets/textures/earth_specular_2048.jpg');
+        const earthNormalMap = textureLoader.load('./assets/textures/earth_normal_2048.jpg');
+        const cloudMap = textureLoader.load('./assets/textures/earth_clouds_1024.png');
         
         const earthMat = new THREE.MeshPhongMaterial({ 
             map: earthMap, 
@@ -304,7 +304,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         let currentMercatorTransform = d3.zoomIdentity;
         let mercatorViewportLayer = null;
         let mercatorMarkerLayer = null;
-        const TERRAIN_BASEMAP_URL = 'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg';
+        const TERRAIN_BASEMAP_URL = './assets/textures/earth_atmos_2048.jpg';
         const TERRAIN_BASEMAP_ASPECT = 2;
 
         function getMercatorSize() {
