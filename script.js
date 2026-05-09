@@ -626,21 +626,31 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         const CALENDAR_CLICK_MIN_MAG = 5;
         const CALENDAR_CLICK_MAX_MAG = Infinity;
         const ALL_VIEWS = ['home-view', 'earthquake-view', 'calendar-view', 'richter-view', 'moment-view', 'surface-view', 'compare-view', 'intensity-view'];
+        const KNOWLEDGE_VIEWS = ['richter-view', 'moment-view', 'surface-view', 'compare-view', 'intensity-view'];
         let currentViewId = 'home-view';
         let homeCarouselController = null;
+        let currentMainSectionId = 'home-view';
+        let currentKnowledgeViewId = 'richter-view';
+        let currentEarthquakeSubview = 'map';
 
-        function showView(viewId, options = {}) {
-            const allowSubpageTransition = Boolean(options.allowSubpageTransition);
-            if (!allowSubpageTransition && currentViewId !== 'home-view' && viewId !== 'home-view' && viewId !== currentViewId) {
-                return;
-            }
-
-            ALL_VIEWS.forEach(id => {
+        function activateMainSection(sectionId) {
+            ['main-earthquake', 'main-knowledge', 'main-heritage'].forEach((id) => {
                 const el = document.getElementById(id);
-                if (el) el.style.display = id === viewId ? '' : 'none';
+                if (el) el.style.display = id === sectionId ? '' : 'none';
             });
-            currentViewId = viewId;
+            const homeView = document.getElementById('home-view');
+            if (homeView) homeView.style.display = sectionId === 'home-view' ? '' : 'none';
+            currentMainSectionId = sectionId;
 
+            if (sectionId === 'main-earthquake') {
+                requestAnimationFrame(() => {
+                    window.dispatchEvent(new Event('resize'));
+                    if (window.drawBaseMap) window.drawBaseMap();
+                });
+            }
+        }
+
+        function applyCompareMagnitudeBlocks(viewId) {
             const magInfo = document.querySelector('.magnitude-info');
             const magDetailed = document.querySelector('.magnitude-detailed');
             const compareView = document.getElementById('compare-view');
@@ -658,12 +668,90 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 if (magInfo) magInfo.style.display = 'none';
                 if (magDetailed) magDetailed.style.display = 'none';
             }
+        }
 
-            if (viewId === 'earthquake-view') {
+        function activateKnowledgeView(viewId) {
+            KNOWLEDGE_VIEWS.forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = id === viewId ? '' : 'none';
+            });
+            document.querySelectorAll('.knowledge-nav-btn[data-knowledge-view]').forEach((btn) => {
+                btn.classList.toggle('active', btn.getAttribute('data-knowledge-view') === viewId);
+            });
+            currentKnowledgeViewId = viewId;
+            applyCompareMagnitudeBlocks(viewId);
+        }
+
+        function activateEarthquakeSubview(subview) {
+            const mapHost = document.getElementById('earthquake-map-host');
+            const calendarHost = document.getElementById('earthquake-calendar-host');
+            if (mapHost) mapHost.style.display = subview === 'map' ? '' : 'none';
+            if (calendarHost) calendarHost.style.display = subview === 'calendar' ? '' : 'none';
+            document.querySelectorAll('.sub-switch-btn[data-earthquake-subview]').forEach((btn) => {
+                btn.classList.toggle('active', btn.getAttribute('data-earthquake-subview') === subview);
+            });
+            currentEarthquakeSubview = subview;
+
+            if (subview === 'map') {
                 requestAnimationFrame(() => {
                     window.dispatchEvent(new Event('resize'));
                     if (window.drawBaseMap) window.drawBaseMap();
                 });
+            }
+        }
+
+        function initMainLayoutComposition() {
+            const mapHost = document.getElementById('earthquake-map-host');
+            const calendarHost = document.getElementById('earthquake-calendar-host');
+            const knowledgeHost = document.getElementById('knowledge-content-host');
+            const quakeView = document.getElementById('earthquake-view');
+            const calendarView = document.getElementById('calendar-view');
+
+            if (mapHost && quakeView) {
+                quakeView.classList.add('embedded-view');
+                quakeView.style.display = '';
+                mapHost.appendChild(quakeView);
+            }
+            if (calendarHost && calendarView) {
+                calendarView.classList.add('embedded-view');
+                calendarView.style.display = '';
+                calendarHost.appendChild(calendarView);
+            }
+            if (knowledgeHost) {
+                KNOWLEDGE_VIEWS.forEach((id) => {
+                    const viewEl = document.getElementById(id);
+                    if (viewEl) {
+                        viewEl.classList.add('embedded-view');
+                        viewEl.style.display = id === 'richter-view' ? '' : 'none';
+                        knowledgeHost.appendChild(viewEl);
+                    }
+                });
+            }
+
+            const homeView = document.getElementById('home-view');
+            if (homeView) homeView.style.display = '';
+            document.querySelectorAll('.back-home-wrap').forEach((el) => {
+                el.style.display = 'none';
+            });
+        }
+
+        function showView(viewId, options = {}) {
+            currentViewId = viewId;
+
+            if (viewId === 'earthquake-view') {
+                activateMainSection('main-earthquake');
+                activateEarthquakeSubview('map');
+                applyCompareMagnitudeBlocks('earthquake-view');
+            } else if (viewId === 'calendar-view') {
+                activateMainSection('main-earthquake');
+                activateEarthquakeSubview('calendar');
+            } else if (KNOWLEDGE_VIEWS.includes(viewId)) {
+                activateMainSection('main-knowledge');
+                activateKnowledgeView(viewId);
+            } else if (viewId === 'heritage-view') {
+                activateMainSection('main-heritage');
+            } else if (viewId === 'home-view') {
+                activateMainSection('home-view');
             }
 
             if (homeCarouselController) {
@@ -2029,11 +2117,30 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         // 注释
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, binding events');
-            document.querySelectorAll('.home-menu-btn[data-view]').forEach(btn => {
-                btn.addEventListener('click', () => showView(btn.getAttribute('data-view')));
+            initMainLayoutComposition();
+            document.querySelectorAll('.home-menu-btn[data-main-section]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const target = btn.getAttribute('data-main-section') || 'main-earthquake';
+                    if (target === 'main-earthquake') showView('earthquake-view');
+                    else if (target === 'main-knowledge') showView(currentKnowledgeViewId || 'richter-view');
+                    else if (target === 'main-heritage') showView('heritage-view');
+                });
             });
-            document.querySelectorAll('.back-home-btn').forEach(btn => {
+            document.querySelectorAll('.back-home-btn').forEach((btn) => {
                 btn.addEventListener('click', () => showView('home-view'));
+            });
+            document.querySelectorAll('.sub-switch-btn[data-earthquake-subview]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const subview = btn.getAttribute('data-earthquake-subview');
+                    showView('earthquake-view');
+                    activateEarthquakeSubview(subview);
+                });
+            });
+            document.querySelectorAll('.knowledge-nav-btn[data-knowledge-view]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const viewId = btn.getAttribute('data-knowledge-view');
+                    showView(viewId);
+                });
             });
             showView('home-view');
             document.getElementById('filterApplyBtn').addEventListener('click', filterEarthquakes);

@@ -56,6 +56,83 @@
             margin: 20px auto 48px;
             padding: 0 20px 32px;
         }
+        .main-section {
+            max-width: 1400px;
+            margin: 0 auto 40px;
+            padding: 0 20px;
+        }
+        .embedded-view {
+            max-width: none;
+            margin: 0;
+            padding: 0;
+        }
+        .earthquake-sub-switch {
+            margin: 12px 0 14px;
+            display: flex;
+            gap: 10px;
+        }
+        .sub-switch-btn {
+            border: 1px solid rgba(60, 82, 128, 0.22);
+            background: rgba(255, 255, 255, 0.82);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #23324f;
+            cursor: pointer;
+        }
+        .sub-switch-btn.active {
+            color: #fff;
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+        .knowledge-layout {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .knowledge-sidebar {
+            width: 240px;
+            min-width: 240px;
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid rgba(60, 82, 128, 0.15);
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 10px 24px rgba(30, 49, 98, 0.08);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .knowledge-nav-btn {
+            border: 1px solid rgba(60, 82, 128, 0.14);
+            background: rgba(245, 248, 255, 0.9);
+            color: #1f2f53;
+            border-radius: 10px;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .knowledge-nav-btn.active {
+            color: #fff;
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+        .knowledge-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .heritage-placeholder {
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(60, 82, 128, 0.14);
+            border-radius: 16px;
+            box-shadow: 0 10px 24px rgba(30, 49, 98, 0.08);
+            padding: 30px 24px;
+            font-size: 18px;
+            color: #31456f;
+            line-height: 1.8;
+        }
         .home-view {
             width: 100%;
             max-width: none;
@@ -138,20 +215,43 @@
 
         .home-menu {
             position: absolute;
-            top: 50%;
+            top: 48%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 5;
             display: flex;
-            flex-direction: column;
-            gap: 20px;
+            flex-direction: row;
+            gap: 16px;
             align-items: center;
-            width: min(90vw, 320px);
+            justify-content: center;
+            flex-wrap: wrap;
+            width: min(94vw, 900px);
+        }
+        .home-hero {
+            position: absolute;
+            left: 50%;
+            top: 30%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            text-align: center;
+            color: #fff;
+            padding: 16px 22px;
+            border-radius: 16px;
+            background: rgba(8, 18, 44, 0.24);
+            backdrop-filter: blur(8px);
+            text-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.24);
+        }
+        .home-hero-title {
+            font-size: clamp(28px, 4vw, 44px);
+            font-weight: 800;
+            letter-spacing: 1px;
+            line-height: 1.2;
         }
 
         .home-menu-btn {
-            width: 260px;
-            height: 60px;
+            width: 220px;
+            height: 56px;
             border-radius: 40px;
             border: 1px solid rgba(255, 255, 255, 0.92);
             background: rgba(255, 255, 255, 0.2);
@@ -169,6 +269,11 @@
             transform: scale(1.05);
             background: rgba(255, 255, 255, 0.35);
             box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
+        }
+        .section-home-back {
+            margin: 22px 0 12px;
+            display: flex;
+            justify-content: flex-end;
         }
         .science-card {
             background: rgba(255, 255, 255, 0.84);
@@ -1623,10 +1728,25 @@
             .calendar-months {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
+            .home-hero { top: 26%; width: 90%; }
             .home-menu-btn {
-                width: min(80vw, 360px);
+                width: min(80vw, 320px);
                 height: 50px;
                 font-size: 18px;
+            }
+        }
+        @media (max-width: 768px) {
+            .knowledge-layout {
+                flex-direction: column;
+            }
+            .knowledge-sidebar {
+                width: 100%;
+                min-width: 0;
+                flex-direction: row;
+                overflow-x: auto;
+            }
+            .knowledge-nav-btn {
+                white-space: nowrap;
             }
         }
     </style>
@@ -1635,20 +1755,54 @@
     <div id="home-view" class="subpage-content home-view">
         <section class="carousel" id="homeCarousel">
             <div class="carousel-track" id="carouselTrack"></div>
+            <div class="home-hero">
+                <div class="home-hero-title">地痕 —— 地震数据与大地记忆</div>
+            </div>
             <div class="home-menu">
-                <button type="button" class="home-menu-btn" data-view="earthquake-view">地震显示</button>
-                <button type="button" class="home-menu-btn" data-view="calendar-view">地震日历</button>
-                <button type="button" class="home-menu-btn" data-view="richter-view">里氏震级</button>
-                <button type="button" class="home-menu-btn" data-view="moment-view">矩震级</button>
-                <button type="button" class="home-menu-btn" data-view="surface-view">面波震级</button>
-                <button type="button" class="home-menu-btn" data-view="compare-view">震级标准比较</button>
-                <button type="button" class="home-menu-btn" data-view="intensity-view">烈度</button>
+                <button type="button" class="home-menu-btn" data-main-section="main-earthquake">地震显示</button>
+                <button type="button" class="home-menu-btn" data-main-section="main-knowledge">地震知识</button>
+                <button type="button" class="home-menu-btn" data-main-section="main-heritage">地震遗迹景观</button>
             </div>
             <button type="button" class="carousel-arrow prev" id="carouselPrev" aria-label="上一张">‹</button>
             <button type="button" class="carousel-arrow next" id="carouselNext" aria-label="下一张">›</button>
             <div class="carousel-dots" id="carouselDots"></div>
         </section>
     </div>
+
+    <section id="main-earthquake" class="main-section" style="display:none;">
+        <div class="earthquake-sub-switch">
+            <button type="button" class="sub-switch-btn active" data-earthquake-subview="map">地图视图</button>
+            <button type="button" class="sub-switch-btn" data-earthquake-subview="calendar">日历视图</button>
+        </div>
+        <div id="earthquake-map-host"></div>
+        <div id="earthquake-calendar-host" style="display:none;"></div>
+        <div class="section-home-back">
+            <button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button>
+        </div>
+    </section>
+
+    <section id="main-knowledge" class="main-section" style="display:none;">
+        <div class="knowledge-layout">
+            <aside class="knowledge-sidebar">
+                <button type="button" class="knowledge-nav-btn active" data-knowledge-view="richter-view">里氏震级</button>
+                <button type="button" class="knowledge-nav-btn" data-knowledge-view="moment-view">矩震级</button>
+                <button type="button" class="knowledge-nav-btn" data-knowledge-view="surface-view">面波震级</button>
+                <button type="button" class="knowledge-nav-btn" data-knowledge-view="compare-view">震级标准比较</button>
+                <button type="button" class="knowledge-nav-btn" data-knowledge-view="intensity-view">烈度</button>
+            </aside>
+            <div id="knowledge-content-host" class="knowledge-content"></div>
+        </div>
+        <div class="section-home-back">
+            <button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button>
+        </div>
+    </section>
+
+    <section id="main-heritage" class="main-section" style="display:none;">
+        <div class="heritage-placeholder">地震遗迹景观板块内容建设中，敬请期待……</div>
+        <div class="section-home-back">
+            <button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button>
+        </div>
+    </section>
 
     <div id="calendar-view" class="subpage-content" style="display:none;">
     <div class="calendar-panel">
