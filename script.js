@@ -85,6 +85,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         scene.add(rimLight);
         
         let quakeMarkers = null;
+        const globeRaycaster = new THREE.Raycaster();
+        const globePointer = new THREE.Vector2();
+        let hasBoundGlobeMarkerClick = false;
+        let hasBoundMercatorMarkerClick = false;
         
         function getMarkerSize(mag) {
             const base = 0.014;
@@ -108,6 +112,41 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             const time = Number(quake?.properties?.time || 0);
             return `${Number(coords[0]).toFixed(3)}_${Number(coords[1]).toFixed(3)}_${time}_${fallbackIndex}`;
         }
+
+        function getQuakeIndexInCurrentData(quake, fallbackIndex = -1) {
+            const list = Array.isArray(window.currentEarthquakeData) ? window.currentEarthquakeData : [];
+            if (!list.length) return -1;
+            if (fallbackIndex >= 0 && list[fallbackIndex] === quake) return fallbackIndex;
+            const targetKey = getQuakeStableKey(quake, fallbackIndex >= 0 ? fallbackIndex : 0);
+            const idx = list.findIndex((item, i) => getQuakeStableKey(item, i) === targetKey);
+            return idx;
+        }
+
+        function bindGlobeMarkerClick() {
+            if (hasBoundGlobeMarkerClick) return;
+            hasBoundGlobeMarkerClick = true;
+
+            renderer.domElement.addEventListener('click', (event) => {
+                if (!quakeMarkers || !quakeMarkers.children?.length) return;
+
+                const rect = renderer.domElement.getBoundingClientRect();
+                if (!rect.width || !rect.height) return;
+
+                globePointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                globePointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                globeRaycaster.setFromCamera(globePointer, camera);
+
+                const hits = globeRaycaster.intersectObjects(quakeMarkers.children, false);
+                if (!hits.length) return;
+
+                const hitIndex = Number(hits[0]?.object?.userData?.index);
+                if (!Number.isInteger(hitIndex) || hitIndex < 0) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+                showQuakeDetail(hitIndex);
+            });
+        }
         
         function updateGlobeMarkers(earthquakes) {
             if (quakeMarkers) {
@@ -129,7 +168,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 const lon = coords[0];
                 const lat = coords[1];
                 const mag = quake.properties.mag;
-                const quakeKey = getQuakeStableKey(quake, index);
+                const dataIndex = getQuakeIndexInCurrentData(quake, index);
+                if (dataIndex < 0) return;
+                const quakeKey = getQuakeStableKey(quake, dataIndex);
                 const isSelected = selectedQuakeKey && quakeKey === selectedQuakeKey;
                 const size = getMarkerSize(mag) * (isSelected ? 1.35 : 1);
                 const position = latLonToVector3(lat, lon, 1.002);
@@ -143,6 +184,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 });
                 const sphere = new THREE.Mesh(new THREE.SphereGeometry(size, 18, 18), material);
                 sphere.position.copy(position);
+                sphere.userData = { index: dataIndex };
                 group.add(sphere);
             });
             quakeMarkers = group;
@@ -150,6 +192,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         }
         
         window.updateGlobeMarkers = updateGlobeMarkers;
+        bindGlobeMarkerClick();
         
         // 注释
         function formatLatLon(lat, lon) {
@@ -343,7 +386,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 const mag = Number(quake?.properties?.mag || 0);
                 if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
 
-                const quakeKey = getQuakeStableKey(quake, index);
+                const dataIndex = getQuakeIndexInCurrentData(quake, index);
+                if (dataIndex < 0) return;
+                const quakeKey = getQuakeStableKey(quake, dataIndex);
                 const isSelected = selectedQuakeKey && quakeKey === selectedQuakeKey;
                 const screenCoords = projection([lon, lat]);
                 if (!screenCoords) return;
@@ -353,7 +398,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 if (x < -70 || x > width + 70 || y < -70 || y > height + 70) return;
 
                 const radius = Math.min(2.4 * Math.pow(1.45, mag - 5.5), 13) * (isSelected ? 1.18 : 1);
-                const group = markerLayer.append('g').attr('class', 'quake-marker');
+                const group = markerLayer.append('g')
+                    .attr('class', 'quake-marker')
+                    .attr('data-index', dataIndex);
                 group.append('circle')
                     .attr('cx', x)
                     .attr('cy', y)
@@ -508,6 +555,19 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 .style('background-color', '#d9e9ff')
                 .style('pointer-events', 'all')
                 .style('cursor', 'grab');
+
+            if (!hasBoundMercatorMarkerClick) {
+                hasBoundMercatorMarkerClick = true;
+                mercatorContainerEl.addEventListener('click', (event) => {
+                    const marker = event.target?.closest?.('.quake-marker');
+                    if (!marker || !mercatorContainerEl.contains(marker)) return;
+                    const idx = Number(marker.getAttribute('data-index'));
+                    if (!Number.isInteger(idx) || idx < 0) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    showQuakeDetail(idx);
+                });
+            }
 
             bindMercatorZoom();
             drawBaseMap();
