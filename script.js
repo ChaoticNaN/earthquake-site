@@ -1,11 +1,7 @@
 ﻿import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-                
-        // 注释
         let currentEarthquakes = [];
         let selectedQuakeKey = null;
-        
         const container = document.getElementById('globeContainer');
         const width = container.clientWidth;
         const height = container.clientHeight;
@@ -28,8 +24,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         controls.enablePan = false;
         controls.rotateSpeed = 0.8;
         controls.zoomSpeed = 0.8;
-        
-        // 閺勭喓鈹栫划鎺戠摍
         const starGeometry = new THREE.BufferGeometry();
         const starCount = 2000;
         const starPositions = new Float32Array(starCount * 3);
@@ -193,8 +187,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         
         window.updateGlobeMarkers = updateGlobeMarkers;
         bindGlobeMarkerClick();
-        
-        // 注释
+      
         function formatLatLon(lat, lon) {
             const latAbs = Math.abs(lat).toFixed(1);
             const latDir = lat >= 0 ? 'N' : 'S';
@@ -203,7 +196,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             return `${latAbs}°${latDir} , ${lonAbs}°${lonDir}`;
         }
         
-        // 注释
         function getSubSolarPointLatLon() {
             const now = new Date();
             const utcHours = now.getUTCHours();
@@ -217,8 +209,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             if (lonDeg < -180) lonDeg += 360;
             return { lat: deltaDeg, lon: lonDeg };
         }
-        
-        // 鐠侊紕鐣绘径顏堟Ъ閺傜懓鎮滈崥鎴﹀櫤 (閻劋绨崗澶屽弾)
+      
         function getSolarDirectionVector() {
             const now = new Date();
             const utcYear = now.getUTCFullYear();
@@ -294,7 +285,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             const tipDiv = document.getElementById('sunPosTip');
             if (tipDiv) {
                 // 太阳计算链路中的经度符号与常规地理显示约定相反，这里仅在展示层取反。
-                tipDiv.innerHTML = `☀️ 实时日照 | 直射点 ${formatLatLon(subPoint.lat, -subPoint.lon)}<br>🕒 基于 UTC 时间`;
+                tipDiv.innerHTML = ` 实时日照 | 直射点 ${formatLatLon(subPoint.lat, -subPoint.lon)}<br>  基于 UTC 时间`;
             }
         }
         // 注释
@@ -337,8 +328,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         
         window.updateGlobeMarkers = updateGlobeMarkers;
     
-
-        // 注释
         let mercatorSvg = null;
         let mercatorContainerEl = null;
         let currentProjection = null;
@@ -598,7 +587,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             return `${year}-${month}-${day}`;
         }
 
-        // 注释
         function buildEarthquakeApiUrl(queryStartDate, queryEndDate, queryMinMag, queryMaxMag, queryLimit = 2000, queryTimezone = '') {
             const formattedStart = formatDate(new Date(queryStartDate));
             const formattedEnd = formatDate(new Date(queryEndDate));
@@ -994,7 +982,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             `;
         }
 
-        function renderTableLoading(text = '🔄 正在加载地震数据...') {
+        function renderTableLoading(text = ' 正在加载地震数据...') {
             const quakeListDiv = document.getElementById('quakeList');
             if (!quakeListDiv) return;
             quakeListDiv.innerHTML = `
@@ -1059,8 +1047,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             if (!quakes || quakes.length === 0) {
                 const domesticOnlyEnabled = document.getElementById('domesticOnlyToggle')?.checked;
                 quakeListDiv.innerHTML = domesticOnlyEnabled
-                    ? `<tr><td class="table-state" colspan="${TABLE_COLSPAN}">📭 筛选后暂无国内地震数据</td></tr>`
-                    : `<tr><td class="table-state" colspan="${TABLE_COLSPAN}">📭 暂无地震数据</td></tr>`;
+                    ? `<tr><td class="table-state" colspan="${TABLE_COLSPAN}"> 筛选后暂无国内地震数据</td></tr>`
+                    : `<tr><td class="table-state" colspan="${TABLE_COLSPAN}"> 暂无地震数据</td></tr>`;
                 return;
             }
 
@@ -1093,7 +1081,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                         <td data-label="操作">
                             <div class="row-actions">
                                 <button type="button" class="action-icon" title="复制地点" onclick="copyPlace(event, ${i})">📋</button>
-                                <button type="button" class="action-icon" title="在地图定位" onclick="locateQuake(event, ${i})">🧭</button>
+                                <button type="button" class="action-icon" title="在地图定位" onclick="locateQuake(event, ${i})">定位</button>
                             </div>
                         </td>
                     </tr>
@@ -1114,15 +1102,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         const TRANSLATE_API_URL = '/api/translate';
         const SUMMARY_API_URL = '/api/generate-summary';
 
-        // 注释
-        // 注释
         const CHINA_FILTER_BBOX = {
             minLng: 70.0,
             maxLng: 135.0,
             minLat: 3.0,
             maxLat: 54.0
         };
-
         const CHINA_BOUNDARY_POLYGONS = [
             // CHN mainland
             [[78.917694, 33.386258], [78.721117, 33.994386], [78.976192, 34.309173], [78.296027, 34.624658], [78.044259, 35.491633], [76.166027, 35.806239], [75.849768, 36.644741], [74.38257, 37.126572], [75.164125, 37.400638], [74.891893, 37.599205], [74.835773, 38.455173], [73.816403, 38.586586], [73.632642, 39.448343], [73.976704, 40.043603], [74.835359, 40.511637], [75.559863, 40.63287], [75.681819, 40.291702], [76.313512, 40.343327], [76.860972, 41.013208], [78.074955, 41.039512], [78.658278, 41.532453], [80.231206, 42.033689], [80.143769, 42.644762], [80.793445, 43.14946], [80.338899, 44.121494], [80.492275, 44.727969], [79.858205, 44.90372], [81.665227, 45.347982], [82.539747, 45.123655], [82.631989, 45.415834], [82.291493, 45.533191], [83.021475, 47.205905], [84.739613, 46.814766], [85.498636, 47.051832], [85.718674, 48.358832], [86.565083, 48.527323], [86.859483, 49.105324], [87.816324, 49.165837], [87.983032, 48.552335], [90.3448, 47.658642], [91.047496, 46.566409], [90.651138, 45.493142], [90.873243, 45.186184], [93.525278, 44.951263], [95.397722, 44.280502], [95.318967, 44.017108], [96.357767, 42.724499], [101.524945, 42.537456], [102.034164, 42.18461], [104.97383, 41.586145], [106.767829, 42.286619], [110.406728, 42.768605], [111.933353, 43.696636], [111.397055, 44.387369], [111.958261, 45.084536], [113.604776, 44.739699], [114.533711, 45.3855], [115.667389, 45.454281], [116.568316, 46.290871], [117.393795, 46.57137], [119.85442, 46.65966], [119.699959, 47.159526], [118.542252, 47.966246], [115.914506, 47.683912], [115.51422, 48.131637], [116.684278, 49.823265], [117.836869, 49.50902], [119.31621, 50.092654], [119.137565, 50.392532], [120.77917, 52.117595], [120.72398, 52.542169], [120.032962, 52.760657], [120.874255, 53.28016], [123.614294, 53.563347], [125.621355, 53.062137], [126.555975, 52.130643], [127.590641, 50.208719], [127.538654, 49.789934], [130.674328, 48.870817], [130.674742, 48.063941], [131.023351, 47.682284], [132.524655, 47.707528], [133.091958, 48.10678], [134.718733, 48.263412], [134.772579, 47.710732], [134.183571, 47.3275], [133.902452, 46.258986], [133.09878, 45.10779], [131.853068, 45.337596], [130.933434, 44.841708], [131.280906, 43.380221], [131.103036, 42.910431], [130.407161, 42.735377], [130.530771, 42.53048], [129.879751, 42.996033], [129.703328, 42.442372], [128.034593, 41.993743], [128.14611, 41.376339], [126.679482, 41.735981], [126.007843, 40.899313], [124.137218, 39.842353], [123.252045, 39.817084], [121.179535, 38.720933], [121.117931, 38.943427], [121.942963, 39.399359], [121.223399, 39.528632], [122.30185, 40.502346], [121.867931, 40.995795], [120.981944, 40.826809], [118.926036, 39.130601], [117.715424, 39.111396], [117.716082, 38.378511], [118.950037, 38.097262], [119.259597, 37.715847], [118.969981, 37.593451], [119.145518, 37.17886], [119.7706, 37.151842], [120.738048, 37.83397], [121.570323, 37.428656], [122.688243, 37.409817], [122.507416, 36.898017], [120.75058, 36.616848], [120.949962, 36.459174], [120.627778, 36.116523], [120.097179, 36.226386], [120.298839, 35.973131], [119.192882, 35.000434], [119.192231, 34.718207], [120.257091, 34.311835], [120.830333, 32.697659], [121.922057, 31.754378], [120.131358, 31.943183], [119.612885, 32.35456], [120.006396, 31.950305], [120.750354, 31.978336], [121.95082, 30.982081], [120.147094, 30.198891], [120.621606, 30.372563], [120.792247, 30.066067], [121.254102, 30.348393], [122.129143, 29.903777], [121.44337, 29.524237], [121.971202, 29.593329], [121.942963, 29.195868], [121.408539, 29.161119], [121.62143, 28.735907], [121.142345, 28.845852], [121.656342, 28.339301], [121.345795, 28.145168], [121.168956, 28.384833], [120.965228, 27.987145], [120.559581, 28.112779], [120.868364, 27.882559], [120.517833, 27.201606], [120.195811, 27.297797], [120.421723, 27.146959], [120.031993, 26.899888], [120.134369, 26.646064], [119.552094, 26.749091], [119.681895, 26.317125], [119.949962, 26.364936], [119.458507, 25.982489], [119.093516, 26.145819], [119.695404, 26.002631], [119.449067, 25.687161], [119.654552, 25.35814], [119.305186, 25.60456], [119.10255, 25.420315], [119.344249, 25.242377], [118.87558, 25.243842], [119.01767, 24.960273], [118.572032, 24.885199], [118.620453, 24.545478], [117.79127, 24.467475], [118.126475, 24.26203], [117.591669, 23.737064], [117.416596, 23.946845], [117.257093, 23.615616], [116.523204, 23.418524], [116.804822, 23.236122], [116.508881, 23.234117], [116.494688, 22.939352], [113.890345, 22.452712], [113.528819, 23.01081], [113.830089, 23.117499], [113.417491, 23.096991], [113.212983, 22.904527], [113.59917, 22.57518], [113.483745, 22.155142], [113.165294, 22.575588], [113.401971, 22.179574], [112.911586, 21.856291], [112.550873, 21.772854], [112.397472, 22.068508], [112.286225, 21.708808], [111.890391, 21.925116], [111.630463, 21.529853], [110.431163, 21.191474], [110.35849, 21.435736], [110.156749, 20.848863], [110.53419, 20.478258], [110.280284, 20.252997], [109.917247, 20.239325], [109.661225, 20.927558], [109.944428, 21.493109], [109.594493, 21.746405], [109.138682, 21.401597], [108.573334, 21.951809], [108.470958, 21.561998], [107.348155, 21.599355], [106.653107, 21.968893], [106.526913, 22.43827], [106.789843, 22.797188], [105.853879, 22.90465], [105.312155, 23.36581], [103.959525, 22.507103], [103.646934, 22.799049], [103.029039, 22.430157], [102.467781, 22.768586], [102.218029, 22.410675], [101.689121, 22.478887], [101.75599, 21.143258], [101.244342, 21.192868], [101.082801, 21.766735], [100.162496, 21.436367], [99.942406, 22.045529], [99.14447, 22.153533], [99.538038, 22.926431], [98.859009, 23.179387], [98.658815, 23.961123], [98.865727, 24.145685], [97.516456, 23.942829], [97.800986, 25.237634], [98.690234, 25.865554], [98.679279, 27.577336], [98.294703, 27.536615], [97.670451, 28.511284], [97.323496, 28.217478], [96.301852, 28.420711], [96.592584, 28.757884], [96.195323, 28.941106], [96.366241, 29.257233], [96.141966, 29.368467], [95.367406, 29.036496], [94.599941, 29.316635], [92.683674, 27.91045], [91.952247, 27.72482], [90.225591, 28.358399], [89.561489, 28.13464], [88.971933, 27.312385], [88.610488, 28.105831], [87.369116, 27.803937], [86.15596, 28.156525], [85.98026, 27.885172], [85.692939, 28.335222], [85.087395, 28.304113], [85.160982, 28.595], [84.450845, 28.73388], [84.08973, 29.256613], [83.523718, 29.183594], [82.088767, 30.330088], [81.387518, 30.373909], [81.097768, 30.016929], [79.131397, 31.438433], [78.745095, 31.308116], [78.384807, 32.547549], [78.943429, 32.346373], [79.620673, 32.728725], [79.456096, 33.250399], [78.917694, 33.386258]],
@@ -1144,32 +1129,18 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             [[113.536469, 22.217068], [113.55714, 22.20246], [113.52475, 22.173733], [113.536469, 22.217068]]
         ];
 
-        // 注释
-        // 鐠囧瓨妲戦敍?
-        // 注释
-        // 注释
         const CHINA_SEA_POLYGONS = [
-            // 注释
             [[117.2, 37.0], [122.8, 37.0], [122.8, 41.3], [117.2, 41.3], [117.2, 37.0]],
-            // 注释
             [[118.6, 31.6], [121.6, 31.5], [124.1, 33.0], [124.8, 35.5], [124.8, 38.8], [123.6, 40.5], [121.2, 40.7], [119.3, 39.1], [118.7, 36.1], [118.6, 31.6]],
-            // 注释
             [[120.8, 23.8], [123.2, 23.8], [125.6, 25.0], [126.4, 27.6], [126.0, 30.2], [124.2, 31.8], [121.3, 30.8], [120.7, 27.4], [120.8, 23.8]],
-            // 注释
             [[111.2, 18.3], [114.6, 18.0], [114.8, 15.8], [112.6, 15.1], [111.3, 16.1], [111.2, 18.3]],
-            // 注释
             [[115.0, 17.5], [118.4, 17.2], [118.8, 15.0], [116.0, 14.2], [115.0, 17.5]],
-            // 注释
             [[110.5, 12.8], [116.8, 12.5], [117.2, 8.0], [113.8, 5.0], [110.0, 6.2], [109.6, 9.5], [110.5, 12.8]]
         ];
 
-        // 注释
         const CHINA_SEA_EXCLUSION_POLYGONS = [
-            // 注释
             [[126.3, 24.0], [131.5, 24.0], [131.5, 29.2], [126.3, 29.2], [126.3, 24.0]],
-            // 注释
             [[117.2, 7.8], [121.8, 7.8], [121.8, 16.8], [117.2, 16.8], [117.2, 7.8]],
-            // 注释
             [[108.2, 10.2], [113.8, 10.2], [113.8, 18.6], [108.2, 18.6], [108.2, 10.2]]
         ];
 
@@ -1234,7 +1205,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         function isInChinaDomain(lng, lat) {
             if (!Number.isFinite(lng) || !Number.isFinite(lat)) return false;
 
-            // 1) 閻晛鑸扮划妤冪摣
             if (
                 lng < CHINA_FILTER_BBOX.minLng ||
                 lng > CHINA_FILTER_BBOX.maxLng ||
@@ -1244,11 +1214,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 return false;
             }
 
-            // 注释
             const inLand = isPointInAnyPolygons(lng, lat, CHINA_BOUNDARY_POLYGONS, CHINA_LAND_POLYGON_BBOXES);
             if (inLand) return true;
 
-            // 注释
             const inSea = isPointInAnyPolygons(lng, lat, CHINA_SEA_POLYGONS, CHINA_SEA_POLYGON_BBOXES);
             if (!inSea) return false;
 
@@ -1256,7 +1224,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             return !inSeaExclusion;
         }
 
-        // 注释
         function isInChinaBoundary(lng, lat) {
             return isInChinaDomain(lng, lat);
         }
@@ -1276,14 +1243,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             return /[\u4e00-\u9fff]/.test(text);
         }
 
-        // 注释
         function isChinaDomesticEarthquake(lat, lng) {
             const isDomestic = isInChinaBoundary(lng, lat);
             console.log(`[isChinaDomesticEarthquake] local check lat=${lat}, lng=${lng}, isDomestic=${isDomestic}`);
             return isDomestic;
         }
 
-        // 注释
         function filterDomesticEarthquakes(quakes) {
             return quakes.filter(quake => {
                 const lat = quake.geometry.coordinates[1];
@@ -1297,7 +1262,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             return domesticOnlyEnabled ? filterDomesticEarthquakes(quakes) : quakes;
         }
 
-        // 注释
         async function getAddressFromCoords(lat, lng, originalPlace) {
             try {
                 const response = await fetch(TRANSLATE_API_URL, {
@@ -1316,7 +1280,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             }
         }
 
-        // 注释
         async function translateLocationWithAmap(lat, lng, originalPlace) {
             console.log(`[translateLocationWithAmap] start: lat=${lat}, lng=${lng}, orig="${originalPlace}"`);
             
@@ -1338,8 +1301,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             console.log(`[translateLocationWithAmap] non-china earthquake or translate failed, returning original: "${originalPlace}"`);
             return originalPlace;
         }
-
-                // 注释
 
         async function translateVisiblePlacesWithAmap(renderVersion = currentListRenderVersion) {
             const elems = Array.from(document.querySelectorAll('.place[data-orig-place][data-lat][data-lng]'));
@@ -1487,7 +1448,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 .join('<br>');
         }
 
-        // 注释
         async function showQuakeDetail(index) {
             const quake = window.currentEarthquakeData[index];
             if (!quake) return;
@@ -1558,7 +1518,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             }
         });
 
-        // 注释
         let originalEarthquakeData = [];
 
         function setFilterMessage(message, type = 'info') {
@@ -1610,12 +1569,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         function runChinaDomainRegressionChecks() {
             const cases = [
-                // 注释
                 { name: 'RyukyuSea', lat: 26.0, lng: 128.0, expected: false },
                 { name: 'PhilippineWest', lat: 14.0, lng: 119.0, expected: false },
                 { name: 'PalawanNW', lat: 10.0, lng: 118.0, expected: false },
                 { name: 'VietnamEast', lat: 15.0, lng: 112.0, expected: false },
-                // 注释
                 { name: 'Bohai', lat: 39.2, lng: 120.5, expected: true },
                 { name: 'EastChinaSeaCN', lat: 28.5, lng: 124.5, expected: true },
                 { name: 'SouthChinaSeaCN', lat: 9.8, lng: 113.2, expected: true },
@@ -1658,7 +1615,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         async function loadEarthquakesWithFilter(queryStartDate, queryEndDate, queryMinMag, queryMaxMag, queryLimit = 2000, queryTimezone = '') {
             try {
-                renderTableLoading(`🔄 正在加载数据（${queryStartDate} 至 ${queryEndDate}，最小震级 M${queryMinMag}）...`);
+                renderTableLoading(` 正在加载数据（${queryStartDate} 至 ${queryEndDate}，最小震级 M${queryMinMag}）...`);
                 
                 const newApiUrl = buildEarthquakeApiUrl(queryStartDate, queryEndDate, queryMinMag, queryMaxMag, queryLimit, queryTimezone);
                 const response = await fetch(newApiUrl);
@@ -1674,7 +1631,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 const filtered = data.features || [];
 
                 if (filtered.length > 2000) {
-                    setFilterMessage(`❌ 符合条件的数据过多（${filtered.length} 条 > 2000 条），请缩小筛选范围`, 'error');
+                    setFilterMessage(`符合条件的数据过多（${filtered.length} 条 > 2000 条），请缩小筛选范围`, 'error');
                     document.getElementById('quakeList').innerHTML = `<tr><td class="table-state" colspan="${TABLE_COLSPAN}">📭 暂无数据</td></tr>`;
                     return;
                 }
@@ -1696,8 +1653,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         function resetFilter() {
             clearFilterMessage();
-            
-            // 注释
+
             initializeFilterDates();
             filterEarthquakes();
         }
@@ -2181,7 +2137,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         // 注释
         const originalFetchEarthquakes = async function fetchEarthquakes() {
             try {
-                renderTableLoading('🔄 正在加载地震数据...');
+                renderTableLoading(' 正在加载地震数据...');
                 const today = getBeijingDateString();
                 document.getElementById('filterStartDate').value = today;
                 document.getElementById('filterEndDate').value = today;
@@ -2221,14 +2177,6 @@ window.retryLastFilterLoad = retryLastFilterLoad;
 window.retryInitialLoad = retryInitialLoad;
 window.showView = showView;
 window.filterEarthquakesByDate = filterEarthquakesByDate;
-
-
-
-
-
-
-
-
 
         function getBeijingDateString(input = Date.now()) {
             const date = input instanceof Date ? input : new Date(input);

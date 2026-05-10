@@ -1891,100 +1891,32 @@
     </section>
 
         <section id="main-heritage" class="main-section" style="display:none;">
-        <div id="heritage-view" class="heritage-embed-wrap">
-            <div class="collab-heritage">
-                <div class="container">
-                    <div class="page-title">
-                        <h1><i class="fas fa-book-open"></i> 地震地貌科普</h1>
-                        <p>选择下面主题之一，了解地震造成这些地貌的形成原因，并查看代表实例。</p>
-                    </div>
-
-                    <div class="topic-grid">
-                        <div class="topic-card" data-topic="断裂带">
-                            <div class="card-icon"><i class="fas fa-bolt"></i></div>
-                            <div class="topic-label">断裂带</div>
-                            <div class="topic-desc">介绍板块运动与断裂带活动所造成的地震与地貌。</div>
-                            <button class="topic-button">进入科普</button>
-                        </div>
-                        <div class="topic-card" data-topic="断层地貌">
-                            <div class="card-icon"><i class="fas fa-mountain"></i></div>
-                            <div class="topic-label">断层地貌</div>
-                            <div class="topic-desc">介绍断层错动、断层崖和断层面等地貌特征。</div>
-                            <button class="topic-button">进入科普</button>
-                        </div>
-                        <div class="topic-card" data-topic="峡谷">
-                            <div class="card-icon"><i class="fas fa-water"></i></div>
-                            <div class="topic-label">峡谷</div>
-                            <div class="topic-desc">介绍地震与河流共同作用下的峡谷形成过程。</div>
-                            <button class="topic-button">进入科普</button>
-                        </div>
-                        <div class="topic-card" data-topic="大裂谷">
-                            <div class="card-icon"><i class="fas fa-ruler-vertical"></i></div>
-                            <div class="topic-label">大裂谷</div>
-                            <div class="topic-desc">介绍张性构造与大规模裂谷地貌的成因。</div>
-                            <button class="topic-button">进入科普</button>
-                        </div>
-                        <div class="topic-card" data-topic="瀑布景观">
-                            <div class="card-icon"><i class="fas fa-water"></i></div>
-                            <div class="topic-label">瀑布景观</div>
-                            <div class="topic-desc">介绍地震堰塞湖和断层崖形成瀑布的机制。</div>
-                            <button class="topic-button">进入科普</button>
-                        </div>
-                        <div class="topic-card" data-topic="湖泊景观">
-                            <div class="card-icon"><i class="fas fa-water"></i></div>
-                            <div class="topic-label">湖泊景观</div>
-                            <div class="topic-desc">介绍地震堰塞湖、断裂湖等湖泊生成原因。</div>
-                            <button class="topic-button">进入科普</button>
-                        </div>
-                        <div class="topic-card" data-topic="砂土液化遗迹景观">
-                            <div class="card-icon"><i class="fas fa-wind"></i></div>
-                            <div class="topic-label">砂土液化遗迹景观</div>
-                            <div class="topic-desc">介绍液化、喷砂口、沙火山等砂土灾害遗迹。</div>
-                            <button class="topic-button">进入科普</button>
-                        </div>
-                        <div class="topic-card" data-topic="河流三角洲">
-                            <div class="card-icon"><i class="fas fa-water"></i></div>
-                            <div class="topic-label">河流三角洲</div>
-                            <div class="topic-desc">介绍地震影响下的河道改道与三角洲演化。</div>
-                            <button class="topic-button">进入科普</button>
-                        </div>
-                        <div class="topic-card" data-topic="独特的地貌">
-                            <div class="card-icon"><i class="fas fa-globe"></i></div>
-                            <div class="topic-label">独特的地貌</div>
-                            <div class="topic-desc">介绍特殊断裂、崩塌等形成的奇特地貌。</div>
-                            <button class="topic-button">进入科普</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="topicModal" class="modal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h2 id="topic-modalTitle" class="modal-title"></h2>
-                            <div class="modal-actions">
-                                <button id="topic-showOverlayBtn" class="overlay-btn"><i class="fas fa-image"></i> 图片占位</button>
-                                <button id="topic-modalClose" class="modal-close">&times;</button>
-                            </div>
-                        </div>
-                        <div id="topic-imageOverlay" class="image-overlay">
-                            <div class="overlay-inner">
-                                <button id="topic-overlayClose" class="overlay-close"><i class="fas fa-times"></i></button>
-                                <div id="topic-overlayPlaceholder" class="overlay-placeholder">此处预留图片位置</div>
-                            </div>
-                        </div>
-                        <div class="modal-body">
-                            <h3>形成原因</h3>
-                            <div id="topic-modalReason" class="modal-description"></div>
-                            <h3>实例部分</h3>
-                            <ul id="topic-modalExamples" class="modal-examples"></ul>
-                        </div>
-                    </div>
-                </div>
-
-                <button class="filter-btn filter-btn-reset back-home-btn heritage-inline-home" data-home-target="home-view" type="button">返回首页</button>
+    <div id="heritage-view" class="heritage-embed-wrap">
+        <div class="collab-heritage">
+            <div class="heritage-intro">
+                <h2>地震遗迹景观</h2>
+                <p>9 类典型地震遗迹景观，点击卡片进入全屏画廊与详细解读。</p>
             </div>
+
+            <div id="heritageCardGrid" class="heritage-card-grid"></div>
+
+            <div id="heritageFullscreenModal" class="heritage-fullscreen-modal" aria-hidden="true">
+                <div class="heritage-modal-inner">
+                    <button id="heritageModalCloseBtn" class="heritage-modal-close" type="button" aria-label="关闭">&times;</button>
+                    <button id="heritagePrevBtn" class="heritage-nav-btn heritage-prev-btn" type="button" aria-label="上一张">&#10094;</button>
+                    <button id="heritageNextBtn" class="heritage-nav-btn heritage-next-btn" type="button" aria-label="下一张">&#10095;</button>
+                    <img id="heritageModalImage" class="heritage-modal-image" src="" alt="">
+                    <h3 id="heritageModalTitle"></h3>
+                    <p id="heritageModalShort"></p>
+                    <p id="heritageModalDesc"></p>
+                    <div id="heritageDots" class="heritage-dots"></div>
+                </div>
+            </div>
+
+            <button class="filter-btn filter-btn-reset back-home-btn heritage-inline-home" data-home-target="home-view" type="button">返回首页</button>
         </div>
-    </section>
+    </div>
+</section>
 
     <div id="calendar-view" class="subpage-content" style="display:none;">
     <div class="calendar-panel">
@@ -2519,4 +2451,5 @@
     </div>
 </body>
 </html>
+
 
