@@ -613,12 +613,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         let calendarDataMap = new Map();
         const CALENDAR_CLICK_MIN_MAG = 5;
         const CALENDAR_CLICK_MAX_MAG = Infinity;
-        const ALL_VIEWS = ['home-view', 'earthquake-view', 'calendar-view', 'richter-view', 'moment-view', 'surface-view', 'compare-view', 'intensity-view'];
-        const KNOWLEDGE_VIEWS = ['richter-view', 'moment-view', 'surface-view', 'compare-view', 'intensity-view'];
+        const ALL_VIEWS = ['home-view', 'earthquake-view', 'calendar-view', 'stress-view', 'richter-view', 'moment-view', 'surface-view', 'compare-view', 'intensity-view'];
+        const KNOWLEDGE_VIEWS = ['stress-view', 'richter-view', 'moment-view', 'surface-view', 'compare-view', 'intensity-view'];
         let currentViewId = 'home-view';
         let homeCarouselController = null;
         let currentMainSectionId = 'home-view';
-        let currentKnowledgeViewId = 'richter-view';
+        let currentKnowledgeViewId = 'stress-view';
         let currentEarthquakeSubview = 'map';
 
         function activateMainSection(sectionId) {
@@ -710,7 +710,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                     const viewEl = document.getElementById(id);
                     if (viewEl) {
                         viewEl.classList.add('embedded-view');
-                        viewEl.style.display = id === 'richter-view' ? '' : 'none';
+                        viewEl.style.display = id === 'stress-view' ? '' : 'none';
                         knowledgeHost.appendChild(viewEl);
                     }
                 });
@@ -1080,8 +1080,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                         <td data-label="海啸"><span class="tsunami ${props.tsunami === 1 ? 'tsunami-yes' : 'tsunami-no'}">${props.tsunami === 1 ? '⚠️ 有' : '无'}</span></td>
                         <td data-label="操作">
                             <div class="row-actions">
-                                <button type="button" class="action-icon" title="复制地点" onclick="copyPlace(event, ${i})">📋</button>
-                                <button type="button" class="action-icon" title="在地图定位" onclick="locateQuake(event, ${i})">定位</button>
+                                <button type="button" class="action-icon" title="复制地点" onclick="copyPlace(event, ${i})">复制地点</button>
+                                <button type="button" class="action-icon" title="地图定位" onclick="locateQuake(event, ${i})">地图定位</button>
                             </div>
                         </td>
                     </tr>
@@ -2078,7 +2078,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 btn.addEventListener('click', () => {
                     const target = btn.getAttribute('data-main-section') || 'main-earthquake';
                     if (target === 'main-earthquake') showView('earthquake-view');
-                    else if (target === 'main-knowledge') showView(currentKnowledgeViewId || 'richter-view');
+                    else if (target === 'main-knowledge') showView(currentKnowledgeViewId || 'stress-view');
                     else if (target === 'main-heritage') showView('heritage-view');
                 });
             });
@@ -2191,3 +2191,4 @@ window.filterEarthquakesByDate = filterEarthquakesByDate;
             const day = parts.find(p => p.type === 'day')?.value;
             return `${year}-${month}-${day}`;
         }
+

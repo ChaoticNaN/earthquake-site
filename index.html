@@ -539,12 +539,12 @@
         }
         
         .quake-table td:nth-child(4) {
-            width: 90px;
+            width: 78px;
             text-align: center;
         }
         
         .quake-table td:nth-child(4) {
-            width: 90px;
+            width: 78px;
             text-align: center;
         }
         .magnitude { font-weight: bold; }
@@ -1568,7 +1568,7 @@
         .quake-table th:nth-child(5),
         .quake-table td:nth-child(5) {
             text-align: center;
-            width: 96px;
+            width: 168px;
         }
 
         .magnitude-chip {
@@ -1605,20 +1605,25 @@
         .row-actions {
             display: flex;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
+            flex-wrap: nowrap;
+            min-width: 148px;
         }
 
         .action-icon {
+            margin: 0;
             border: 1px solid rgba(120, 130, 152, 0.28);
             background: rgba(255, 255, 255, 0.7);
             border-radius: 8px;
-            width: 30px;
+            width: auto;
+            min-width: 62px;
             height: 28px;
+            padding: 0 8px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             transition: all 0.2s;
         }
 
@@ -1798,6 +1803,8 @@
 
             .row-actions {
                 justify-content: flex-end;
+                gap: 8px;
+                min-width: 0;
             }
 
             .table-state {
@@ -1877,7 +1884,8 @@
     <section id="main-knowledge" class="main-section" style="display:none;">
         <div class="knowledge-layout">
             <aside class="knowledge-sidebar">
-                <button type="button" class="knowledge-nav-btn active" data-knowledge-view="richter-view">里氏震级</button>
+                <button type="button" class="knowledge-nav-btn active" data-knowledge-view="stress-view">构造应力</button>
+                <button type="button" class="knowledge-nav-btn" data-knowledge-view="richter-view">里氏震级</button>
                 <button type="button" class="knowledge-nav-btn" data-knowledge-view="moment-view">矩震级</button>
                 <button type="button" class="knowledge-nav-btn" data-knowledge-view="surface-view">面波震级</button>
                 <button type="button" class="knowledge-nav-btn" data-knowledge-view="compare-view">震级标准比较</button>
@@ -1956,7 +1964,7 @@
 
     <div class="data-section">
         <div class="filter-panel">
-            <div class="filter-title">🔍 地震数据筛选</div>
+            <div class="filter-title">地震数据筛选</div>
             <div class="filter-grid">
                 <div class="filter-group">
                     <label class="filter-label">起始日期</label>
@@ -2002,7 +2010,7 @@
         </div>
 
         <div class="magnitude-info">
-            <div class="magnitude-info-title"> 震级说明：矩震级 VS 里氏震级的原理与差别</div>
+            <div class="magnitude-info-title"> 震级说明：矩震级 VS 里氏震级</div>
             <div class="magnitude-comparison">
                 <div class="magnitude-type">
                     <div class="magnitude-type-name"> 矩震级 (Moment Magnitude, Mw)</div>
@@ -2125,9 +2133,38 @@
     </div>
     </div>
 
-    <div id="richter-view" class="subpage-content compare-style" style="display:none;">
+        <div id="stress-view" class="subpage-content compare-style knowledge-view" style="display:none;">
         <div class="science-card">
-            <h3>里氏震级（ML）科普</h3>
+            <h3>构造应力</h3>
+            <div class="edu-grid" style="gap:20px;">
+                <article class="edu-card">
+                    <h4>1) 构造应力的定义</h4>
+                    <p>构造应力是地壳岩石内部单位面积上所受的力，是板块运动、断层活动与地震发生的根本驱动力。岩石在应力作用下会产生形变，并在达到强度极限时破裂。</p>
+                </article>
+                <article class="edu-card">
+                    <h4>2) 构造应力的来源</h4>
+                    <p><strong>板块边界相互作用：</strong>板块汇聚产生挤压、离散产生拉张、转换边界产生剪切。</p>
+                    <p><strong>地幔对流拖曳力：</strong>软流圈缓慢流动拖曳岩石圈，持续向板块传递动力。</p>
+                    <p><strong>重力势能差异：</strong>高原与盆地之间存在位能差，导致侧向挤压与重力滑塌相关应力。</p>
+                </article>
+                <article class="edu-card">
+                    <h4>3) 应力与应变的关系</h4>
+                    <p>在线性弹性阶段可用胡克定律近似描述：应力与应变成正比。地壳长期加载时会积累弹性应变能，断层失稳破裂后能量快速释放，表现为地震。震后常出现局部应力释放，随后在板块运动作用下再次进入应力积累周期。</p>
+                </article>
+                <article class="edu-card">
+                    <h4>4) 主应力与应力类型</h4>
+                    <p><strong>压应力（挤压）：</strong>→ ←，常对应逆冲或褶皱构造。</p>
+                    <p><strong>张应力（拉张）：</strong>← →，常对应正断层和裂谷发育。</p>
+                    <p><strong>剪应力（剪切）：</strong>↑ ↓（平行错动），常对应走滑断层。</p>
+                    <p><span class="formula-highlight">σ1 ≥ σ2 ≥ σ3</span>：最大、中间、最小主应力共同控制断裂方式。</p>
+                </article>
+            </div>
+        </div>
+        <div class="back-home-wrap"><button class="filter-btn filter-btn-reset back-home-btn" data-home-target="home-view">返回首页</button></div>
+    </div>
+<div id="richter-view" class="subpage-content compare-style" style="display:none;">
+        <div class="science-card">
+            <h3>里氏震级（ML）</h3>
             <div class="edu-grid">
                 <article class="edu-card">
                     <h4>1) 定义与度量方式</h4>
@@ -2152,7 +2189,7 @@
                     <p>常见现象：M2~3 多为弱感；M4~5 可能局部轻损；M6~7 进入显著破坏区间。</p>
                 </article>
                 <article class="edu-card full">
-                    <h4>里氏震级能量释放对比（简化）</h4>
+                    <h4>里氏震级能量释放对比</h4>
                     <table class="magnitude-table">
                         <thead>
                             <tr><th>震级差</th><th>振幅变化</th><th>能量变化</th></tr>
@@ -2165,7 +2202,7 @@
                     </table>
                 </article>
                 <article class="edu-card full">
-                    <h4>模拟震级刻度尺（直观理解）</h4>
+                    <h4>模拟震级刻度尺</h4>
                     <div class="scale-bar"></div>
                     <div class="scale-markers">
                         <span>M2 微震</span><span>M3 可感</span><span>M4 小破坏</span><span>M5 中等破坏</span><span>M6 强震</span><span>M7+ 严重破坏</span>
@@ -2183,7 +2220,7 @@
 
     <div id="moment-view" class="subpage-content compare-style" style="display:none;">
         <div class="science-card">
-            <h3>矩震级（Mw）科普</h3>
+            <h3>矩震级（Mw）</h3>
             <div class="edu-grid">
                 <article class="edu-card">
                     <h4>1) 定义与度量方式</h4>
@@ -2246,7 +2283,7 @@
 
     <div id="surface-view" class="subpage-content compare-style" style="display:none;">
         <div class="science-card">
-            <h3>面波震级（Ms）科普</h3>
+            <h3>面波震级（Ms）</h3>
             <div class="edu-grid">
                 <article class="edu-card">
                     <h4>1) 定义与度量方式</h4>
@@ -2311,7 +2348,7 @@
 
     <div id="intensity-view" class="subpage-content compare-style" style="display:none;">
         <div class="science-card">
-            <h3>地震烈度科普</h3>
+            <h3>地震烈度</h3>
             <div class="edu-grid">
                 <article class="edu-card">
                     <h4>1) 定义与度量方式</h4>
@@ -2402,3 +2439,4 @@
     </div>
 </body>
 </html>
+
