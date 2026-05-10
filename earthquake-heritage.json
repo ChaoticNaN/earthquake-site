@@ -1,0 +1,454 @@
+[
+  {
+    "id": "tangshan_1976",
+    "name": "唐山大地震遗址",
+    "location": "中国河北省唐山市",
+    "year": 1976,
+    "magnitude": 7.8,
+    "description": "1976年唐山大地震是中国近代史上破坏性最强的一次地震，瞬间摧毁城市并造成约24万人死亡。遗址保存了地震纪念馆、抗震纪念碑、震后废墟遗址和重建样本，展示了灾后救援、污染治理和城市韧性。",
+    "images": [
+      "images/placeholder.svg"
+    ],
+    "coordinates": [118.18, 39.63],
+    "preservation_status": "国家级文物保护单位",
+    "visitors": "每年数十万人",
+    "features": [
+      "地震纪念馆",
+      "抗震纪念碑",
+      "震后废墟遗址",
+      "抗震重建展示"
+    ]
+  },
+  {
+    "id": "san_francisco_1906",
+    "name": "旧金山大地震遗址",
+    "location": "美国加利福尼亚州旧金山",
+    "year": 1906,
+    "magnitude": 7.9,
+    "description": "1906年旧金山大地震摧毁了市区大片建筑并引发大火，造成3000多人死亡。该遗址与纪念设施记录了历史断裂带、老城重建和现代地震工程的兴起。",
+    "images": [
+      "images/placeholder.svg"
+    ],
+    "coordinates": [-122.4194, 37.7749],
+    "preservation_status": "历史遗址",
+    "visitors": "每年数百万游客",
+    "features": [
+      "断裂带露头",
+      "地震纪念碑",
+      "火灾废墟展览",
+      "重建保护建筑"
+    ]
+  },
+  {
+    "id": "kobe_1995",
+    "name": "阪神大地震遗址",
+    "location": "日本兵库县神户市",
+    "year": 1995,
+    "magnitude": 7.3,
+    "description": "1995年阪神大地震造成6434人死亡，海啸式冲击摧毁神户港、桥梁和住宅区。遗址记录了断层滑动、断桥残留和灾后防震工程的实践，是日本地震记忆与重建的典范。",
+    "images": [
+      "images/placeholder.svg"
+    ],
+    "coordinates": [135.1956, 34.6901],
+    "preservation_status": "地震纪念设施",
+    "visitors": "每年数十万人",
+    "features": [
+      "纪念馆与展览",
+      "断层暴露",
+      "受损桥梁遗迹",
+      "防灾教育基地"
+    ]
+  },
+  {
+    "id": "christchurch_2011",
+    "name": "基督城地震遗址",
+    "location": "新西兰基督城",
+    "year": 2011,
+    "magnitude": 6.3,
+    "description": "2011年基督城地震造成185人死亡并引发大规模地面液化，城市中心建筑严重破坏。遗址包括红区、液化沉陷区、教堂废墟和纪念设施，展示了城市重建与抗震规划的教训。",
+    "images": [
+      "images/placeholder.svg"
+    ],
+    "coordinates": [172.6362, -43.5321],
+    "preservation_status": "地震纪念区",
+    "visitors": "每年数万人",
+    "features": [
+      "液化沉陷区",
+      "纪念碑",
+      "教堂废墟",
+      "重建规划展示"
+    ]
+  },
+  {
+    "id": "sichuan_2008",
+    "name": "汶川大地震遗址",
+    "location": "中国四川省汶川县",
+    "year": 2008,
+    "magnitude": 8.0,
+    "description": "2008年汶川大地震造成近9万人死亡，山体崩塌、堰塞湖和断裂带景观突出。遺址涵盖映秀塌方带、北川地震纪念馆、唐家山堰塞湖和地震断层暴露，揭示地震崩塌和堰塞湖地貌的发展。",
+    "images": [
+      "images/placeholder.svg"
+    ],
+    "coordinates": [103.3649, 31.0039],
+    "preservation_status": "国家级地震遗址公园",
+    "visitors": "每年数百万人",
+    "features": [
+      "映秀塌方带",
+      "堰塞湖遗迹",
+      "断裂带暴露",
+      "地震纪念馆"
+    ]
+  },
+  {
+    "id": "l_aquila_2009",
+    "name": "拉奎拉地震遗址",
+    "location": "意大利阿布鲁佐大区拉奎拉",
+    "year": 2009,
+    "magnitude": 6.3,
+    "description": "2009年拉奎拉地震造成309人死亡，破坏了这座古城的大量教堂与城堡。遗址保留了受损建筑、纪念碑和震后修复工程，是欧洲历史文化遗产在地震灾害中恢复与保护的鲜活案例。",
+    "images": [
+      "images/placeholder.svg"
+    ],
+    "coordinates": [13.3991, 42.3505],
+    "preservation_status": "历史文化遗产",
+    "visitors": "每年数万人",
+    "features": [
+      "教堂废墟",
+      "街区修复",
+      "地震博物馆",
+      "文化遗产保护"
+    ]
+  },
+  {
+    "id": "nepal_2015",
+    "name": "尼泊尔大地震遗址",
+    "location": "尼泊尔加德满都谷地",
+    "year": 2015,
+    "magnitude": 7.8,
+    "description": "2015年尼泊尔大地震造成近9000人死亡，摧毁了加德满都谷地内大量寺庙和传统建筑。遗址展示了古城毁损、寺庙修复与文化遗产保护过程，并揭示山地地震对人文景观的巨大影响。",
+    "images": [
+      "images/placeholder.svg"
+    ],
+    "coordinates": [85.3240, 27.7172],
+    "preservation_status": "世界遗产遗址",
+    "visitors": "每年数百万朝圣者",
+    "features": [
+      "寺庙废墟",
+      "传统建筑修复",
+      "地震断层痕迹",
+      "灾后文化保护"
+    ]
+  },
+  {
+    "id": "mexico_city_1985",
+    "name": "墨西哥城大地震遗址",
+    "location": "墨西哥墨西哥城",
+    "year": 1985,
+    "magnitude": 8.0,
+    "description": "1985年墨西哥城大地震发生在古湖床软土区，震波经过沉积层后出现显著放大效应，导致许多高层建筑和历史建筑倒塌。遗址深入展示了软土液化、城市抗震改造及生态恢复的地质环境与防灾教训。",
+    "images": [
+      "images/placeholder.svg"
+    ],
+    "coordinates": [-99.1332, 19.4326],
+    "preservation_status": "地震纪念设施",
+    "visitors": "每年数十万人",
+    "features": [
+      "软土液化",
+      "古湖床沉积",
+      "倒塌建筑遗迹",
+      "城市抗震改造"
+    ]
+  },
+  {
+    "id": "tanlu_fault",
+    "name": "郯庐断裂带断层地貌",
+    "location": "中国山东省郯城县附近",
+    "year": 1668,
+    "magnitude": 8.5,
+    "description": "郯庐断裂带是中国东部最重要的活动断裂带之一，1668年郯城大地震沿断裂带形成了显著的断层裂缝、断崖和堰塞湖。该区域是研究华北东部断裂带活动与大震地貌演化的典型现场。",
+    "images": [
+      "https://example.com/tanlu_fault1.jpg",
+      "https://example.com/tanlu_fault2.jpg"
+    ],
+    "coordinates": [118.36, 34.90],
+    "preservation_status": "重要地质遗迹",
+    "visitors": "每年数万人",
+    "features": [
+      "断层裂缝",
+      "断崖地貌",
+      "堰塞湖遗迹",
+      "古地震断面"
+    ]
+  },
+  {
+    "id": "east_african_rift",
+    "name": "东非大裂谷地震景观",
+    "location": "东非大裂谷",
+    "year": 2020,
+    "magnitude": 6.2,
+    "description": "东非大裂谷是地球上最典型的张性断裂带，地震与火山活动共同塑造出深切峡谷、裂谷湖泊和断崖。该地貌体现了大陆裂谷早期演化阶段和活跃地震带的自然景观。",
+    "images": [
+      "https://example.com/east_african_rift1.jpg",
+      "https://example.com/east_african_rift2.jpg"
+    ],
+    "coordinates": [35.63, 0.52],
+    "preservation_status": "自然地质遗迹",
+    "visitors": "每年数十万人",
+    "features": [
+      "裂谷峡谷",
+      "断层断崖",
+      "裂谷湖泊",
+      "火山与地震相互作用"
+    ]
+  },
+  {
+    "id": "huashan_west_peak",
+    "name": "华山西峰断层地貌",
+    "location": "中国陕西省华山西峰",
+    "year": 2003,
+    "magnitude": 5.8,
+    "description": "华山西峰地带的峰峦和悬崖受到断层运动控制，断层崖和岩层褶皱是典型的古地震地貌。该区域不仅是登山名胜，亦是观察华北地震带断层活动与崩塌地貌的天然实景。",
+    "images": [
+      "https://example.com/huashan_west1.jpg",
+      "https://example.com/huashan_west2.jpg"
+    ],
+    "coordinates": [110.08, 34.47],
+    "preservation_status": "地质公园",
+    "visitors": "每年数百万游客",
+    "features": [
+      "断层崖",
+      "峭壁峡谷",
+      "岩层褶皱",
+      "古地震断面"
+    ]
+  },
+  {
+    "id": "weihe_valley",
+    "name": "渭河谷地震断裂带",
+    "location": "中国陕西省渭河谷",
+    "year": 1976,
+    "magnitude": 7.2,
+    "description": "渭河谷地处华北平原西缘，古今地震活动显著，其断裂线、崩塌坡和河道改道证据清晰。这里不仅展示了断裂带沿线的地貌变化，也体现了地震对河流三角洲和农业平原的影响。",
+    "images": [
+      "https://example.com/weihe_valley1.jpg",
+      "https://example.com/weihe_valley2.jpg"
+    ],
+    "coordinates": [108.95, 34.34],
+    "preservation_status": "地质遗迹区",
+    "visitors": "每年数十万人",
+    "features": [
+      "断裂暴露",
+      "河谷断崖",
+      "滑坡与崩塌",
+      "古地震沉积"
+    ]
+  },
+  {
+    "id": "tancheng_1668",
+    "name": "1668年郯城地震大裂谷",
+    "location": "中国山东省郯城、熊耳山",
+    "year": 1668,
+    "magnitude": 8.5,
+    "description": "1668年郯城大地震沿断裂带形成了长达数十公里的巨型裂缝和大裂谷，断层崖和崩塌堆积记录了古地震的暴力破坏。该遗址是研究中国东部大震地貌与断裂带演化的重要现场。",
+    "images": [
+      "https://example.com/tancheng_rift1.jpg",
+      "https://example.com/tancheng_rift2.jpg"
+    ],
+    "coordinates": [118.32, 34.86],
+    "preservation_status": "历史地震遗迹",
+    "visitors": "每年数万人",
+    "features": [
+      "地裂缝",
+      "大裂谷",
+      "断层崖",
+      "崩塌遗迹"
+    ]
+  },
+  {
+    "id": "jiji_1999_canyon",
+    "name": "集集地震与大安溪峡谷",
+    "location": "台湾南投县集集镇、大安溪峡谷",
+    "year": 1999,
+    "magnitude": 7.3,
+    "description": "1999年集集地震沿台中德基断层引发断层破裂、滑坡和峡谷变形。大安溪峡谷保留了地震断层面、崩塌堆积和强震后河谷重塑，是台湾地震地貌的典型展示。",
+    "images": [
+      "https://example.com/jiji_canyon1.jpg",
+      "https://example.com/jiji_canyon2.jpg"
+    ],
+    "coordinates": [120.79, 23.90],
+    "preservation_status": "地质景观区",
+    "visitors": "每年数十万人",
+    "features": [
+      "断层面",
+      "峡谷变形",
+      "滑坡堆积",
+      "河谷重塑"
+    ]
+  },
+  {
+    "id": "jiuzhaigou_waterfall",
+    "name": "九寨沟熊猫海瀑布",
+    "location": "中国四川省九寨沟熊猫海",
+    "year": 2017,
+    "magnitude": 7.0,
+    "description": "九寨沟熊猫海瀑布依托地震诱发的堰塞湖与崩塌堆积，形成独特的梯级瀑布景观。这里体现了地震与喀斯特地貌共同作用下的水体重新组合与断层湖泊演化。",
+    "images": [
+      "https://example.com/jiuzhaigou_waterfall1.jpg",
+      "https://example.com/jiuzhaigou_waterfall2.jpg"
+    ],
+    "coordinates": [104.25, 33.27],
+    "preservation_status": "世界自然遗产",
+    "visitors": "每年数百万游客",
+    "features": [
+      "梯级瀑布",
+      "堰塞湖景观",
+      "崩塌地貌",
+      "喀斯特水文"
+    ]
+  },
+  {
+    "id": "landslide_dam_lakes",
+    "name": "小南海与党家岔堰塞湖",
+    "location": "中国四川省阿坝州",
+    "year": 2008,
+    "magnitude": 7.9,
+    "description": "汶川地震引发山体崩塌堵塞河道，形成小南海与党家岔堰塞湖。这些堰塞湖展示了地震对河流系统和生态环境的深远影响，为堰塞湖溃坝与防洪救援提供了实地研究基础。",
+    "images": [
+      "https://example.com/landslide_lake1.jpg",
+      "https://example.com/landslide_lake2.jpg"
+    ],
+    "coordinates": [103.35, 31.01],
+    "preservation_status": "地质遗迹保护区",
+    "visitors": "每年数十万人",
+    "features": [
+      "堰塞湖",
+      "崩塌堆积",
+      "河道阻断",
+      "地震湖泊"
+    ]
+  },
+  {
+    "id": "beijing_sand_liquefaction",
+    "name": "北京西山砂土液化遗迹",
+    "location": "中国北京市西山地区",
+    "year": 1976,
+    "magnitude": 6.0,
+    "description": "北京西山地区保留了砂土液化与喷砂口遗迹，古地震活动在浅层沉积物中形成沙火山、喷砂堆和液化裂隙。这些地貌是研究地震液化与城市地质风险评估的重要自然样本。",
+    "images": [
+      "https://example.com/beijing_liquefaction1.jpg",
+      "https://example.com/beijing_liquefaction2.jpg"
+    ],
+    "coordinates": [116.10, 39.95],
+    "preservation_status": "地质遗迹保护区",
+    "visitors": "每年数万人",
+    "features": [
+      "沙火山",
+      "喷砂口",
+      "液化堆积",
+      "浅层地震遗迹"
+    ]
+  },
+  {
+    "id": "okavango_delta",
+    "name": "奥卡万戈三角洲",
+    "location": "博茨瓦纳奥卡万戈三角洲",
+    "year": 2021,
+    "magnitude": 6.3,
+    "description": "奥卡万戈三角洲是世界上最大的内陆三角洲之一，其沉积和河流形态受地壳运动和季节洪水双重影响。这里的沉积地貌与洪水过程为研究地震与沉积系统耦合作用提供了独特视角。",
+    "images": [
+      "https://example.com/okavango1.jpg",
+      "https://example.com/okavango2.jpg"
+    ],
+    "coordinates": [22.50, -19.15],
+    "preservation_status": "世界自然遗产",
+    "visitors": "每年数十万人",
+    "features": [
+      "三角洲湿地",
+      "沉积地貌",
+      "洪水通道",
+      "结构沉积影响"
+    ]
+  },
+  {
+    "id": "haiyuan_guliu",
+    "name": "海原地震古柳撕裂遗迹",
+    "location": "中国宁夏回族自治区海原县",
+    "year": 1920,
+    "magnitude": 8.5,
+    "description": "海原大地震沿古柳沟断裂带形成了独特的‘古柳撕裂’裂谷景观，深裂谷与滑坡崩塌带清晰可见。该遗址对研究强震断裂暴露、地层错动和断裂带活动具有重要意义。",
+    "images": [
+      "https://example.com/haiyuan1.jpg",
+      "https://example.com/haiyuan2.jpg"
+    ],
+    "coordinates": [105.69, 36.56],
+    "preservation_status": "地质遗迹区",
+    "visitors": "每年数万人",
+    "features": [
+      "断裂裂缝",
+      "深裂谷",
+      "塌陷带",
+      "断层暴露"
+    ]
+  },
+  {
+    "id": "tianzhu_mountain",
+    "name": "天柱山双乳峰地震崩塌",
+    "location": "中国贵州省铜仁市天柱山",
+    "year": 1975,
+    "magnitude": 6.0,
+    "description": "天柱山双乳峰由地震崩塌和喀斯特石灰岩断裂共同塑造，形成了两座近似双峰的独特山体。这里的断层线、崩塌堆积和垂直崖壁展示了地震崩塌的地貌遗存。",
+    "images": [
+      "https://example.com/tianzhu1.jpg",
+      "https://example.com/tianzhu2.jpg"
+    ],
+    "coordinates": [109.19, 27.47],
+    "preservation_status": "地质公园",
+    "visitors": "每年数十万人",
+    "features": [
+      "双峰地貌",
+      "崩塌体",
+      "断层线",
+      "岩壁崩塌"
+    ]
+  },
+  {
+    "id": "datong_yungang_caves",
+    "name": "大同云冈石窟",
+    "location": "中国山西省大同市",
+    "year": 2001,
+    "magnitude": 5.2,
+    "description": "大同云冈石窟位于古地震构造影响区域，其岩壁与佛像刻槽体现了断裂运动对山体岩层的塑造。作为历史与地质交汇的遗迹，它展示了地震带地貌与文化遗产的和谐共生。",
+    "images": [
+      "images/大同云冈石窟.png"
+    ],
+    "coordinates": [113.58, 40.10],
+    "preservation_status": "世界文化遗产",
+    "visitors": "每年数百万游客",
+    "features": [
+      "石窟佛像",
+      "古断裂影响",
+      "岩壁雕刻",
+      "文化与地质融合"
+    ]
+  },
+  {
+    "id": "tiger_mountain_collapse",
+    "name": "崩塌老虎上山",
+    "location": "中国四川省雅安市",
+    "year": 2022,
+    "magnitude": 6.1,
+    "description": "崩塌老虎上山是一次由强震引发的山体崩塌遗迹，巨大的岩石滑坡形成了新的峡谷与阻塞堰塞湖。这里的景观是地震与山地崩塌交互作用的典型案例。",
+    "images": [
+      "images/崩塌老虎上山.png"
+    ],
+    "coordinates": [102.97, 30.00],
+    "preservation_status": "地质遗迹区",
+    "visitors": "每年数万人",
+    "features": [
+      "山体崩塌",
+      "断裂滑坡",
+      "新生峡谷",
+      "生态重建"
+    ]
+  }
+]

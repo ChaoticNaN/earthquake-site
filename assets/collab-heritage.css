@@ -1,0 +1,47 @@
+/* Scoped styles for collaborator heritage content */
+.collab-heritage {
+    font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #223;
+}
+.collab-heritage .page-title {
+    text-align: center;
+    margin-bottom: 1.25rem;
+    color: #222;
+}
+.collab-heritage .page-title h1 { color: #111; }
+.collab-heritage .topic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 12px 0 24px;
+}
+.collab-heritage .topic-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,249,250,0.95) 100%);
+    border: 1px solid rgba(115, 103, 240, 0.08);
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.collab-heritage .topic-card .card-icon { width: 44px; height: 44px; border-radius: 10px; display:flex;align-items:center;justify-content:center; background:linear-gradient(135deg,#5b8def,#8f6afc); color:#fff; }
+.collab-heritage .topic-label { font-weight:700; }
+.collab-heritage .topic-desc { color:#556; font-size:0.95rem; }
+.collab-heritage .topic-button { margin-top:auto; align-self:flex-start; padding:8px 12px; border-radius:999px; border:none; background:#5b8def;color:#fff; cursor:pointer; }
+
+/* Modal */
+.collab-heritage .modal { display:none; position:fixed; inset:0; background: rgba(10,20,45,0.6); z-index:2200; }
+.collab-heritage .modal .modal-content { background:#fff; max-width:880px; margin:6vh auto; border-radius:16px; overflow:hidden; }
+.collab-heritage .modal-header { padding:16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eef2ff; }
+.collab-heritage .modal-title { font-size:1.25rem; }
+.collab-heritage .modal-body { padding:16px; color:#333; line-height:1.7; }
+.collab-heritage .overlay-btn { padding:8px 12px; border-radius:999px; border:none; background:rgba(91,141,239,0.12); cursor:pointer; }
+.collab-heritage .image-overlay { display:none; position:absolute; inset:0; align-items:center; justify-content:center; }
+.collab-heritage .image-overlay.visible { display:flex; }
+.collab-heritage .overlay-inner { background:rgba(255,255,255,0.95); padding:12px; border-radius:12px; max-width:720px; }
+
+@media (max-width:800px) {
+    .collab-heritage .topic-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+}
